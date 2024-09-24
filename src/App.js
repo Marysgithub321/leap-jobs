@@ -4,9 +4,9 @@ import Dashboard from './components/Dashboard';
 import EstimateCalculator from './components/estimatecalculator';
 import Estimates from './components/estimates';
 import EstimateDetails from './components/EstimateDetails'; // Add EstimateDetails import
-import Invoices from './components/invoices';
+import Invoices from './components/Invoices';
 import Expenses from './components/expenses';
-import AddJobs from './components/addJobs';
+import NewInvoice from './components/NewInvoice'; // Updated the file name to NewInvoice.js
 import OpenJobs from './components/openJobs';
 import PastJobs from './components/pastJobs';
 import ContractorPayouts from './components/staffPayouts'; // Assuming this is the same as "ContractorPayouts"
@@ -26,7 +26,7 @@ function App() {
 
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/expenses" element={<Expenses />} />
-          <Route path="/add-jobs" element={<AddJobs />} />
+          <Route path="/new-invoice" element={<NewInvoice />} /> {/* Updated the route path to match NewInvoice */}
           <Route path="/open-jobs" element={<OpenJobs />} />
           <Route path="/past-jobs" element={<PastJobs />} />
           <Route path="/contractor-payouts" element={<ContractorPayouts />} />

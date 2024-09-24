@@ -37,7 +37,7 @@ const Estimates = () => {
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Estimates</h1>
         <button
-          className="bg-tealLight text-white p-2 rounded"
+          className="bg-green text-white p-2 rounded"
           onClick={() => navigate("/")}
         >
           Home

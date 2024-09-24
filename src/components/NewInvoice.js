@@ -1,33 +1,31 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { jsPDF } from "jspdf";
 
-const EstimateCalculator = () => {
-  const location = useLocation(); // To get passed state for editing
-  const navigate = useNavigate(); // To navigate between pages
+const NewInvoice = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Initialize form state (pre-populate with location.state if editing an estimate or open job)
+  // Initialize form state (pre-populate with location.state if coming from a closed job)
   const [customerName, setCustomerName] = useState(
-    location.state?.estimate?.customerName || ""
+    location.state?.job?.customerName || ""
   );
   const [jobNumber, setJobNumber] = useState(
-    location.state?.estimate?.jobNumber || ""
+    location.state?.job?.jobNumber || ""
   );
-  const [date, setDate] = useState(location.state?.estimate?.date || "");
-  const [address, setAddress] = useState(
-    location.state?.estimate?.address || ""
-  );
+  const [date, setDate] = useState(location.state?.job?.date || "");
+  const [address, setAddress] = useState(location.state?.job?.address || "");
   const [phoneNumber, setPhoneNumber] = useState(
-    location.state?.estimate?.phoneNumber || ""
+    location.state?.job?.phoneNumber || ""
   );
-  const [rooms, setRooms] = useState(location.state?.estimate?.rooms || []);
-  const [extras, setExtras] = useState(location.state?.estimate?.extras || []);
-  const [paints, setPaints] = useState(location.state?.estimate?.paints || []);
-  const [total, setTotal] = useState(location.state?.estimate?.total || 0);
-  const [gstHst, setGstHst] = useState(location.state?.estimate?.gstHst || 0);
-  const [editPrices, setEditPrices] = useState(false); // For price editing
+  const [rooms, setRooms] = useState([]);
+  const [extras, setExtras] = useState([]);
+  const [paints, setPaints] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [gstHst, setGstHst] = useState(0);
 
   // Room cost options
-  const [costOptions, setCostOptions] = useState([
+  const costOptions = [
     { label: "8ft ceiling walls trim and doors", value: 350 },
     { label: "9ft ceiling walls trim and doors", value: 400 },
     { label: "10ft ceiling walls trim and doors", value: 450 },
@@ -40,12 +38,12 @@ const EstimateCalculator = () => {
     { label: "10ft walls", value: 325 },
     { label: "Just ceiling", value: 150 },
     { label: "Just trim and doors", value: 125 },
-  ]);
+  ];
 
   const roomOptions = [
     "Kitchen",
     "Master Bedroom",
-    "Walk-in closet",
+    "Walk-in Closet",
     "Bedroom 2",
     "Bedroom 3",
     "Bedroom 4",
@@ -69,7 +67,7 @@ const EstimateCalculator = () => {
     "Extra Room",
   ];
 
-  // Calculate total when rooms, extras, or paints change
+  // Recalculate the total whenever rooms, extras, or paints change
   const calculateTotal = useCallback(() => {
     const roomsTotal = rooms.reduce(
       (acc, room) => acc + parseFloat(room.cost || 0),
@@ -88,14 +86,13 @@ const EstimateCalculator = () => {
     setGstHst(subtotal * 0.13); // Assuming 13% GST/HST
   }, [rooms, extras, paints]);
 
-  // Automatically calculate total when inputs change
   useEffect(() => {
     calculateTotal();
   }, [rooms, extras, paints, calculateTotal]);
 
-
-  const addJob = () => {
-    const newJob = {
+  // Save the invoice to localStorage
+  const saveInvoice = () => {
+    const newInvoice = {
       customerName,
       jobNumber,
       date,
@@ -105,71 +102,33 @@ const EstimateCalculator = () => {
       extras,
       paints,
       total: total + gstHst, // Total including GST/HST
-      notes: {}, // Empty notes for tracking progress on rooms, extras, and paints
     };
-  
-    // Fetch existing open jobs from localStorage
-    const openJobs = JSON.parse(localStorage.getItem('openJobs')) || [];
-    
-    // Check if the job is already in openJobs (by jobNumber), and update if necessary
-    const jobIndex = openJobs.findIndex(job => job.jobNumber === jobNumber);
-    
-    if (jobIndex !== -1) {
-      // If the job already exists, update it
-      openJobs[jobIndex] = newJob;
-    } else {
-      // Otherwise, add the new job
-      openJobs.push(newJob);
-    }
-  
-    // Save updated jobs back to localStorage
-    localStorage.setItem('openJobs', JSON.stringify(openJobs));
-  
-    // Navigate to the open jobs page after adding or updating the job
-    navigate('/open-jobs');
+
+    const invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+    invoices.push(newInvoice);
+    localStorage.setItem("invoices", JSON.stringify(invoices));
+
+    // Generate the PDF after saving the invoice
+    generatePdf(newInvoice);
+
+    // Navigate to the invoices page
+    navigate("/invoices");
   };
-  
 
-  // Save estimate and open job to localStorage
-  const saveEstimateAndJob = () => {
-    const updatedEstimate = {
-      customerName,
-      jobNumber,
-      date,
-      address,
-      phoneNumber,
-      rooms,
-      extras,
-      paints,
-      total: total + gstHst, // Total with tax
-    };
-
-    // Update Estimates
-    const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
-    const estimateIndex = estimates.findIndex(
-      (estimate) => estimate.jobNumber === jobNumber
-    );
-
-    if (estimateIndex !== -1) {
-      estimates[estimateIndex] = updatedEstimate;
-    } else {
-      estimates.push(updatedEstimate);
-    }
-    localStorage.setItem("estimates", JSON.stringify(estimates));
-
-    // Update Open Jobs (if it's an open job)
-    const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
-    const openJobIndex = openJobs.findIndex(
-      (job) => job.jobNumber === jobNumber
-    );
-
-    if (openJobIndex !== -1) {
-      openJobs[openJobIndex] = updatedEstimate; // Update the existing job
-    }
-    localStorage.setItem("openJobs", JSON.stringify(openJobs));
-
-    // Redirect to the open jobs page
-    navigate("/open-jobs");
+  // Generate PDF
+  const generatePdf = (invoice) => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text("Invoice", 10, 10);
+    doc.setFontSize(12);
+    doc.text(`Job Number: ${invoice.jobNumber}`, 10, 30);
+    doc.text(`Customer Name: ${invoice.customerName}`, 10, 40);
+    doc.text(`Address: ${invoice.address}`, 10, 50);
+    doc.text(`Date: ${invoice.date}`, 10, 60);
+    doc.text(`Subtotal: $${invoice.total.toFixed(2)}`, 10, 80);
+    doc.text(`GST/HST: $${gstHst.toFixed(2)}`, 10, 90);
+    doc.text(`Total: $${(invoice.total + gstHst).toFixed(2)}`, 10, 100);
+    doc.save(`Invoice_${invoice.jobNumber}.pdf`);
   };
 
   // Add Room Handler
@@ -202,9 +161,6 @@ const EstimateCalculator = () => {
     setPaints(updatedPaints);
   };
 
-  // Toggle Edit Prices
-  const toggleEditPrices = () => setEditPrices(!editPrices);
-
   // Remove Handlers
   const removeRoom = (index) => setRooms(rooms.filter((_, i) => i !== index));
   const removeExtra = (index) =>
@@ -216,12 +172,10 @@ const EstimateCalculator = () => {
     <div className="max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg">
       {/* Header with Home Button */}
       <header className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Paint Job Estimator
-        </h1>
+        <h1 className="text-2xl font-bold text-gray-800">Invoice</h1>
         <button
           onClick={() => navigate("/")}
-          className="bg-green text-white p-2 rounded hover:bg-gray-600"
+          className="bg-green text-white p-2 rounded hover:bg-green-600"
         >
           Home
         </button>
@@ -283,10 +237,7 @@ const EstimateCalculator = () => {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="phoneNumber"
-                  className="block text-sm font-bold"
-                >
+                <label htmlFor="phoneNumber" className="block text-sm font-bold">
                   Phone Number:
                 </label>
                 <input
@@ -334,44 +285,7 @@ const EstimateCalculator = () => {
             >
               Add Paint
             </button>
-            <button
-              className="bg-blue text-white p-2 rounded w-full sm:w-auto"
-              onClick={toggleEditPrices}
-            >
-              Prices
-            </button>
           </div>
-
-          {/* Edit Room Prices Section */}
-          {editPrices && (
-            <div className="bg-gray-100 p-4 rounded-lg mb-4">
-              <h3 className="text-lg font-bold mb-2">Edit Room Prices</h3>
-              {costOptions.map((option, index) => (
-                <div key={index} className="mb-2">
-                  <label className="block text-sm font-bold">
-                    {option.label}:
-                  </label>
-                  <input
-                    type="number"
-                    value={option.value}
-                    onChange={(e) => {
-                      const updatedPrices = [...costOptions];
-                      updatedPrices[index].value =
-                        parseFloat(e.target.value) || 0;
-                      setCostOptions(updatedPrices);
-                    }}
-                    className="border rounded w-full p-2"
-                  />
-                </div>
-              ))}
-              <button
-                className="bg-pink text-white p-2 mt-4 rounded w-full"
-                onClick={toggleEditPrices}
-              >
-                Save Prices
-              </button>
-            </div>
-          )}
 
           {/* Display added Rooms */}
           {rooms.length > 0 && (
@@ -382,7 +296,6 @@ const EstimateCalculator = () => {
                   key={index}
                   className="section-bordered p-4 bg-white rounded-lg shadow-sm mb-4"
                 >
-                  {/* Room Name Dropdown */}
                   <select
                     className="border p-2 mb-2 w-full"
                     value={room.roomName}
@@ -398,7 +311,6 @@ const EstimateCalculator = () => {
                     ))}
                   </select>
 
-                  {/* Cost Dropdown */}
                   <select
                     className="border p-2 mb-2 w-full"
                     value={room.cost}
@@ -412,7 +324,6 @@ const EstimateCalculator = () => {
                     ))}
                   </select>
 
-                  {/* Remove Room Button */}
                   <button
                     onClick={() => removeRoom(index)}
                     className="bg-blue text-white p-2 rounded hover:bg-darkGray w-full mt-2"
@@ -436,7 +347,9 @@ const EstimateCalculator = () => {
                   <select
                     className="border p-2 mb-2 w-full"
                     value={extra.type}
-                    onChange={(e) => updateExtra(index, "type", e.target.value)}
+                    onChange={(e) =>
+                      updateExtra(index, "type", e.target.value)
+                    }
                   >
                     <option value="">Select Extra</option>
                     <option value="Stairs - Stain or Paint">
@@ -449,7 +362,6 @@ const EstimateCalculator = () => {
                     <option value="Other">Other</option>
                   </select>
 
-                  {/* Manually enter cost */}
                   <input
                     type="number"
                     className="border p-2 mb-2 w-full"
@@ -458,7 +370,6 @@ const EstimateCalculator = () => {
                     onChange={(e) => updateExtra(index, "cost", e.target.value)}
                   />
 
-                  {/* Remove Extra Button */}
                   <button
                     onClick={() => removeExtra(index)}
                     className="bg-tealLight text-white p-2 rounded hover:bg-darkGray w-full mt-2"
@@ -482,7 +393,9 @@ const EstimateCalculator = () => {
                   <select
                     className="border p-2 mb-2 w-full"
                     value={paint.type}
-                    onChange={(e) => updatePaint(index, "type", e.target.value)}
+                    onChange={(e) =>
+                      updatePaint(index, "type", e.target.value)
+                    }
                   >
                     <option value="">Select Paint Type</option>
                     <option value="Primer">Primer</option>
@@ -490,7 +403,6 @@ const EstimateCalculator = () => {
                     <option value="Stain">Stain</option>
                   </select>
 
-                  {/* Manually enter cost */}
                   <input
                     type="number"
                     className="border p-2 mb-2 w-full"
@@ -499,7 +411,6 @@ const EstimateCalculator = () => {
                     onChange={(e) => updatePaint(index, "cost", e.target.value)}
                   />
 
-                  {/* Remove Paint Button */}
                   <button
                     onClick={() => removePaint(index)}
                     className="bg-darkBlue text-white p-2 rounded hover:bg-darkGray w-full mt-2"
@@ -511,7 +422,7 @@ const EstimateCalculator = () => {
             </>
           )}
 
-          {/* Subtotals and Totals */}
+          {/* Subtotal, GST/HST, and Total */}
           <div className="section-bordered border-t mt-4 pt-4">
             <div className="flex justify-between">
               <p>Subtotal:</p>
@@ -527,20 +438,12 @@ const EstimateCalculator = () => {
             </div>
           </div>
 
-          {/* Save Estimate Button */}
+          {/* Save Invoice Button */}
           <button
             className="bg-green text-white p-2 mt-4 w-full rounded"
-            onClick={saveEstimateAndJob}
+            onClick={saveInvoice}
           >
-            Save Changes
-          </button>
-
-          {/* Add Job Button */}
-          <button
-            className="bg-darkBlue text-white p-2 mt-4 w-full rounded"
-            onClick={addJob}
-          >
-            Add Job
+            Save Invoice
           </button>
         </div>
       </main>
@@ -548,4 +451,4 @@ const EstimateCalculator = () => {
   );
 };
 
-export default EstimateCalculator;
+export default NewInvoice;
