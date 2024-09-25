@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { jsPDF } from "jspdf";
 
 const NewInvoice = () => {
   const location = useLocation();
@@ -38,6 +37,7 @@ const NewInvoice = () => {
     { label: "10ft walls", value: 325 },
     { label: "Just ceiling", value: 150 },
     { label: "Just trim and doors", value: 125 },
+    { label: "Custom Cost", value: "custom" }, // Add custom option for cost
   ];
 
   const roomOptions = [
@@ -65,6 +65,20 @@ const NewInvoice = () => {
     "Garage",
     "Dining Room",
     "Extra Room",
+  ];
+
+  const extraOptions = [
+    "Stairs - Stain or Paint",
+    "Stairs Stained to Match Floor",
+    "Railings",
+    "Other",
+  ];
+
+  const paintOptions = [
+    "Primer",
+    "Paint",
+    "Stain",
+    "Other",
   ];
 
   // Recalculate the total whenever rooms, extras, or paints change
@@ -101,6 +115,8 @@ const NewInvoice = () => {
       rooms,
       extras,
       paints,
+      subtotal: total, // Save the calculated subtotal
+      gstHst, // Save the calculated GST/HST
       total: total + gstHst, // Total including GST/HST
     };
 
@@ -108,37 +124,21 @@ const NewInvoice = () => {
     invoices.push(newInvoice);
     localStorage.setItem("invoices", JSON.stringify(invoices));
 
-    // Generate the PDF after saving the invoice
-    generatePdf(newInvoice);
-
     // Navigate to the invoices page
     navigate("/invoices");
   };
 
-  // Generate PDF
-  const generatePdf = (invoice) => {
-    const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text("Invoice", 10, 10);
-    doc.setFontSize(12);
-    doc.text(`Job Number: ${invoice.jobNumber}`, 10, 30);
-    doc.text(`Customer Name: ${invoice.customerName}`, 10, 40);
-    doc.text(`Address: ${invoice.address}`, 10, 50);
-    doc.text(`Date: ${invoice.date}`, 10, 60);
-    doc.text(`Subtotal: $${invoice.total.toFixed(2)}`, 10, 80);
-    doc.text(`GST/HST: $${gstHst.toFixed(2)}`, 10, 90);
-    doc.text(`Total: $${(invoice.total + gstHst).toFixed(2)}`, 10, 100);
-    doc.save(`Invoice_${invoice.jobNumber}.pdf`);
-  };
-
   // Add Room Handler
-  const addRoom = () => setRooms([...rooms, { roomName: "", cost: 0 }]);
+  const addRoom = () =>
+    setRooms([...rooms, { roomName: "", customRoomName: "", cost: 0, customCost: false }]);
 
   // Add Extra Handler
-  const addExtra = () => setExtras([...extras, { type: "", cost: 0 }]);
+  const addExtra = () =>
+    setExtras([...extras, { type: "", customType: "", cost: 0 }]);
 
   // Add Paint Handler
-  const addPaint = () => setPaints([...paints, { type: "", cost: 0 }]);
+  const addPaint = () =>
+    setPaints([...paints, { type: "", customType: "", cost: 0 }]);
 
   // Update Room Handler
   const updateRoom = (index, field, value) => {
@@ -280,7 +280,7 @@ const NewInvoice = () => {
               Add Extra
             </button>
             <button
-              className="bg-pink text-white p-2 rounded w-full sm:w-auto"
+              className="bg-blue text-white p-2 rounded w-full sm:w-auto"
               onClick={addPaint}
             >
               Add Paint
@@ -299,9 +299,13 @@ const NewInvoice = () => {
                   <select
                     className="border p-2 mb-2 w-full"
                     value={room.roomName}
-                    onChange={(e) =>
-                      updateRoom(index, "roomName", e.target.value)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      updateRoom(index, "roomName", value);
+                      if (value === "Extra Room") {
+                        updateRoom(index, "customRoomName", "");
+                      }
+                    }}
                   >
                     <option value="">Select Room</option>
                     {roomOptions.map((roomName, i) => (
@@ -311,10 +315,32 @@ const NewInvoice = () => {
                     ))}
                   </select>
 
+                  {/* Custom Room Name Input */}
+                  {room.roomName === "Extra Room" && (
+                    <input
+                      type="text"
+                      className="border p-2 mb-2 w-full"
+                      placeholder="Enter custom room name"
+                      value={room.customRoomName}
+                      onChange={(e) =>
+                        updateRoom(index, "customRoomName", e.target.value)
+                      }
+                    />
+                  )}
+
                   <select
                     className="border p-2 mb-2 w-full"
                     value={room.cost}
-                    onChange={(e) => updateRoom(index, "cost", e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "custom") {
+                        updateRoom(index, "customCost", true);
+                        updateRoom(index, "cost", 0); // Reset the cost
+                      } else {
+                        updateRoom(index, "customCost", false);
+                        updateRoom(index, "cost", parseFloat(value));
+                      }
+                    }}
                   >
                     <option value="">Select Cost</option>
                     {costOptions.map((option, i) => (
@@ -324,9 +350,22 @@ const NewInvoice = () => {
                     ))}
                   </select>
 
+                  {/* Custom Cost Input */}
+                  {room.customCost && (
+                    <input
+                      type="number"
+                      className="border p-2 mb-2 w-full"
+                      placeholder="Enter custom cost"
+                      value={room.cost}
+                      onChange={(e) =>
+                        updateRoom(index, "cost", parseFloat(e.target.value))
+                      }
+                    />
+                  )}
+
                   <button
                     onClick={() => removeRoom(index)}
-                    className="bg-blue text-white p-2 rounded hover:bg-darkGray w-full mt-2"
+                    className="bg-pink text-white p-2 rounded hover:bg-darkGray w-full mt-2"
                   >
                     Remove Room
                   </button>
@@ -347,20 +386,34 @@ const NewInvoice = () => {
                   <select
                     className="border p-2 mb-2 w-full"
                     value={extra.type}
-                    onChange={(e) =>
-                      updateExtra(index, "type", e.target.value)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      updateExtra(index, "type", value);
+                      if (value === "Other") {
+                        updateExtra(index, "customType", "");
+                      }
+                    }}
                   >
                     <option value="">Select Extra</option>
-                    <option value="Stairs - Stain or Paint">
-                      Stairs - Stain or Paint
-                    </option>
-                    <option value="Stairs Stained to Match Floor">
-                      Stairs Stained to Match Floor
-                    </option>
-                    <option value="Railings">Railings</option>
-                    <option value="Other">Other</option>
+                    {extraOptions.map((option, i) => (
+                      <option key={i} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
+
+                  {/* Custom Extra Type Input */}
+                  {extra.type === "Other" && (
+                    <input
+                      type="text"
+                      className="border p-2 mb-2 w-full"
+                      placeholder="Enter custom extra"
+                      value={extra.customType}
+                      onChange={(e) =>
+                        updateExtra(index, "customType", e.target.value)
+                      }
+                    />
+                  )}
 
                   <input
                     type="number"
@@ -372,7 +425,7 @@ const NewInvoice = () => {
 
                   <button
                     onClick={() => removeExtra(index)}
-                    className="bg-tealLight text-white p-2 rounded hover:bg-darkGray w-full mt-2"
+                    className="bg-pink text-white p-2 rounded hover:bg-darkGray w-full mt-2"
                   >
                     Remove Extra
                   </button>
@@ -393,15 +446,34 @@ const NewInvoice = () => {
                   <select
                     className="border p-2 mb-2 w-full"
                     value={paint.type}
-                    onChange={(e) =>
-                      updatePaint(index, "type", e.target.value)
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      updatePaint(index, "type", value);
+                      if (value === "Other") {
+                        updatePaint(index, "customType", "");
+                      }
+                    }}
                   >
                     <option value="">Select Paint Type</option>
-                    <option value="Primer">Primer</option>
-                    <option value="Paint">Paint</option>
-                    <option value="Stain">Stain</option>
+                    {paintOptions.map((option, i) => (
+                      <option key={i} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </select>
+
+                  {/* Custom Paint Type Input */}
+                  {paint.type === "Other" && (
+                    <input
+                      type="text"
+                      className="border p-2 mb-2 w-full"
+                      placeholder="Enter custom paint type"
+                      value={paint.customType}
+                      onChange={(e) =>
+                        updatePaint(index, "customType", e.target.value)
+                      }
+                    />
+                  )}
 
                   <input
                     type="number"
@@ -413,7 +485,7 @@ const NewInvoice = () => {
 
                   <button
                     onClick={() => removePaint(index)}
-                    className="bg-darkBlue text-white p-2 rounded hover:bg-darkGray w-full mt-2"
+                    className="bg-pink text-white p-2 rounded hover:bg-darkGray w-full mt-2"
                   >
                     Remove Paint
                   </button>
