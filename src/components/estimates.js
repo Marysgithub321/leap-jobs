@@ -1,30 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { jsPDF } from "jspdf";
+import LeapLogoTeal from "../images/LeapLogoTeal.png"; // Adjust the path to your actual image location
 
 const Estimates = () => {
   const [estimates, setEstimates] = useState([]);
-  const navigate = useNavigate(); // Use hook to navigate between routes
+  const navigate = useNavigate();
 
-  // Fetch estimates from localStorage when the component loads
+  // Load saved estimates from localStorage
   useEffect(() => {
     const savedEstimates = JSON.parse(localStorage.getItem("estimates")) || [];
     setEstimates(savedEstimates);
   }, []);
 
-  // Function to navigate to the EstimateDetails page
-  const openEstimate = (jobNumber) => {
-    navigate(`/estimate-details/${jobNumber}`); // Pass job number instead of index
-  };
-  
-
-  // Function to edit the estimate
-  const editEstimate = (index) => {
-    navigate("/estimate-calculator", {
-      state: { estimate: estimates[index], estimateIndex: index },
-    });
-  };
-
-  // Function to delete the estimate
+  // Function to delete an estimate
   const deleteEstimate = (index) => {
     const updatedEstimates = estimates.filter((_, i) => i !== index);
     setEstimates(updatedEstimates);
@@ -33,61 +22,231 @@ const Estimates = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* Header with Estimate and Home button */}
+      {/* Header with Home Button */}
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Estimates</h1>
         <button
-          className="bg-green text-white p-2 rounded"
+          className="bg-green text-white p-2 rounded hover:bg-green-600"
           onClick={() => navigate("/")}
         >
           Home
         </button>
       </header>
 
-      {/* Estimates Table */}
+      {/* Display saved estimates */}
       {estimates.length > 0 ? (
         estimates.map((estimate, index) => (
-          <div key={index} className="mb-6 p-4 bg-gray-100 rounded-lg shadow">
-            {/* Labels */}
-            <div className="flex justify-between mb-2 font-semibold text-gray-700">
-              <span>Name</span>
-              <span>Job</span>
-              <span>Total</span>
-            </div>
+          <div key={index} className="mb-4 p-4 bg-gray-100 rounded-lg shadow">
+            <p>{`Date: ${estimate.date || "N/A"} | Job Number: ${
+              estimate.jobNumber || "N/A"
+            }`}</p>
+            <p>{`Customer Name: ${estimate.customerName || "N/A"}`}</p>
+            <p>{`Phone Number: ${estimate.phoneNumber || "N/A"}`}</p>
+            <p>{`Address: ${estimate.address || "N/A"}`}</p>
 
-            {/* Estimate Data */}
-            <div className="flex justify-between mb-4">
-              <span>{estimate.customerName}</span>
-              <span>{estimate.jobNumber}</span>
-              <span>${estimate.total.toFixed(2)}</span>
-            </div>
-
-            {/* Action Buttons */}
             <div className="flex space-x-4">
               <button
-                className="bg-blue text-white p-2 rounded"
-                onClick={() => openEstimate(estimate.jobNumber)} // Pass job number as the ID
+                className="bg-darkBlue text-white p-2 mt-4 rounded"
+                onClick={async () => {
+                  const doc = new jsPDF();
+
+                  // Load the logo image and wait for it to load before proceeding
+                  const logoImage = new Image();
+                  logoImage.src = LeapLogoTeal;
+
+                  logoImage.onload = () => {
+                    // Add the logo image at specified position
+                    const imgProps = { x: 18, y: 10, width: 100, height: 60 };
+                    doc.addImage(
+                      logoImage,
+                      "PNG",
+                      imgProps.x,
+                      imgProps.y,
+                      imgProps.width,
+                      imgProps.height
+                    );
+
+                    // Company Information Box
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    const companyInfo = [
+                      "Helena Boldt",
+                      "(519) 773-0070",
+                      "51459 Lyons Line Springfield",
+                      "ON N0L 2J0",
+                      "lena.peters@live.ca",
+                    ];
+                    const companyInfoX = 47;
+                    const companyInfoYStart = 75;
+                    const companyLineHeight = 5;
+
+                    companyInfo.forEach((line, idx) => {
+                      doc.text(
+                        line,
+                        companyInfoX,
+                        companyInfoYStart + idx * companyLineHeight
+                      );
+                    });
+                    const boxWidth = 50;
+                    const boxHeight =
+                      companyInfo.length * companyLineHeight + 3;
+                    doc.rect(45, 70, boxWidth, boxHeight);
+
+                    // Title (Estimate)
+                    doc.setFontSize(16);
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Estimate", 170, 20, null, null, "center");
+
+                    // Date and Estimate Number Box under the title
+                    doc.setFontSize(12);
+                    doc.setFont("helvetica", "normal");
+                    doc.text(`Date: ${estimate.date || "N/A"}`, 157, 27); 
+                    doc.text(
+                      `Estimate # ${estimate.jobNumber || "N/A"}`,
+                      157,
+                      35
+                    );
+
+                    // Line between Date and Estimate Number
+                    doc.line(155, 30, 195, 30);
+                    // Box around Date and Estimate Number
+                    doc.rect(155, 22, 40, 15); 
+
+                    // Customer Information
+                    const customerInfoLabel = "Name / Address:";
+                    const customerName = estimate.customerName || "N/A";
+                    const phoneNumber = estimate.phoneNumber || "N/A";
+                    const address = estimate.address || "N/A";
+                    const addressLines = doc.splitTextToSize(address, 50);
+
+                    doc.text(customerInfoLabel, 120, 75);
+                    doc.line(118, 78, 198, 78);
+                    doc.text(customerName, 120, 83);
+                    let addressY = 88;
+                    addressLines.forEach((line) => {
+                      doc.text(line, 120, addressY);
+                      addressY += 5;
+                    });
+                    doc.text(phoneNumber, 120, addressY + 0);
+
+                    const customerBoxHeight = addressY - 70 + 5;
+                    doc.rect(118, 70, 80, customerBoxHeight);
+
+                    // Grid Header at 135
+                    let gridY = 135;
+                    const headers = ["Items", "Description", "Qty", "Rate", "Total"];
+                    const headerX = [20, 70, 110, 140, 170];
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "bold");
+
+                    headers.forEach((header, i) => {
+                      doc.text(header, headerX[i], gridY);
+                    });
+                    doc.line(15, gridY + 2, 195, gridY + 2); 
+                    gridY += 10;
+
+                    // Grid Items (Room, Extras, Paints)
+                    estimate.rooms.forEach((room) => {
+                      doc.text("Room", headerX[0], gridY);
+                      doc.text(room.roomName || "N/A", headerX[1], gridY);
+                      gridY += 8;
+                    });
+
+                    estimate.extras.forEach((extra) => {
+                      doc.text("Extra", headerX[0], gridY);
+                      doc.text(extra.type || "N/A", headerX[1], gridY);
+                      gridY += 8;
+                    });
+
+                    estimate.paints.forEach((paint) => {
+                      doc.text("Paint", headerX[0], gridY);
+                      doc.text(paint.type || "N/A", headerX[1], gridY);
+                      gridY += 8;
+                    });
+
+                    // Totals Box with Lines
+                    const totalsBoxX = 150;
+                    const totalsBoxY = gridY + 15;
+                    const totalsBoxWidth = 50;
+                    const totalsBoxHeight = 30;
+                    const totalsLineHeight = 10;
+
+                    // Draw the box for totals
+                    doc.rect(totalsBoxX, totalsBoxY, totalsBoxWidth, totalsBoxHeight);
+
+                    doc.setFont("helvetica", "bold");
+                    doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
+                    doc.text("GST/HST:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 2 - 2);
+                    doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
+
+                    // Add lines between the subtotal, GST/HST, and total
+                    doc.line(totalsBoxX, totalsBoxY + totalsLineHeight, totalsBoxX + totalsBoxWidth, totalsBoxY + totalsLineHeight);
+                    doc.line(totalsBoxX, totalsBoxY + totalsLineHeight * 2, totalsBoxX + totalsBoxWidth, totalsBoxY + totalsLineHeight * 2);
+                    doc.line(totalsBoxX, totalsBoxY + totalsLineHeight * 3, totalsBoxX + totalsBoxWidth, totalsBoxY + totalsLineHeight * 3);
+
+                    doc.setFont("helvetica", "normal");
+
+                    const subtotal = parseFloat(estimate.subtotal || 0);
+                    const taxAmount = subtotal * 0.13;
+                    const totalValue = subtotal + taxAmount;
+
+                    const formatCurrency = (num) =>
+                      "$" + num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
+                    doc.text(
+                      formatCurrency(subtotal),
+                      totalsBoxX + totalsBoxWidth - 2,
+                      totalsBoxY + totalsLineHeight - 2,
+                      { align: "right" }
+                    );
+                    doc.text(
+                      formatCurrency(taxAmount),
+                      totalsBoxX + totalsBoxWidth - 2,
+                      totalsBoxY + totalsLineHeight * 2 - 2,
+                      { align: "right" }
+                    );
+                    doc.text(
+                      formatCurrency(totalValue),
+                      totalsBoxX + totalsBoxWidth - 2,
+                      totalsBoxY + totalsLineHeight * 3 - 2,
+                      { align: "right" }
+                    );
+
+                    // GST/HST Number (not bold)
+                    doc.setFont("helvetica", "normal");
+                    doc.text("GST/HST NO.:", 15, totalsBoxY + totalsBoxHeight + 10);
+                    doc.text("709401533R10001", 50, totalsBoxY + totalsBoxHeight + 10);
+
+                    // Save the PDF with the customer's name
+                    const customerNameSanitized = estimate.customerName
+                      .replace(/[^a-z0-9]/gi, "_")
+                      .toLowerCase();
+                    doc.save(`Estimate_${customerNameSanitized}.pdf`);
+                  };
+                }}
               >
-                Open
+                Download PDF
               </button>
 
               <button
-                className="bg-tealLight text-white p-2 rounded"
-                onClick={() => editEstimate(index)}
+                className="bg-blue text-white p-2 mt-4 rounded"
+                onClick={() =>
+                  navigate("/estimate-calculator", { state: { estimate } })
+                }
               >
                 Edit
               </button>
+
               <button
-                className="bg-pink text-white p-2 rounded"
+                className="bg-pink text-white p-2 mt-4 rounded"
                 onClick={() => deleteEstimate(index)}
               >
-                Delete
+                Delete Estimate
               </button>
             </div>
           </div>
         ))
       ) : (
-        <p>No estimates found</p>
+        <p>No estimates found.</p>
       )}
     </div>
   );

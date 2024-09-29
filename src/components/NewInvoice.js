@@ -22,23 +22,26 @@ const NewInvoice = () => {
   const [paints, setPaints] = useState([]);
   const [total, setTotal] = useState(0);
   const [gstHst, setGstHst] = useState(0);
+  const [editPrices, setEditPrices] = useState(false); // For price editing
 
-  // Room cost options
-  const costOptions = [
-    { label: "8ft ceiling walls trim and doors", value: 350 },
-    { label: "9ft ceiling walls trim and doors", value: 400 },
-    { label: "10ft ceiling walls trim and doors", value: 450 },
-    { label: "Vaulted ceiling", value: 600 },
-    { label: "8ft walls and ceilings", value: 275 },
-    { label: "9ft walls and ceilings", value: 325 },
-    { label: "10ft walls and ceilings", value: 385 },
-    { label: "8ft walls", value: 225 },
-    { label: "9ft walls", value: 275 },
-    { label: "10ft walls", value: 325 },
-    { label: "Just ceiling", value: 150 },
-    { label: "Just trim and doors", value: 125 },
-    { label: "Custom Cost", value: "custom" }, // Add custom option for cost
-  ];
+  // Load room prices from localStorage (if available) or use default cost options
+  const [costOptions, setCostOptions] = useState(
+    JSON.parse(localStorage.getItem("invoiceCostOptions")) || [
+      { label: "8ft ceiling walls trim and doors", value: 350 },
+      { label: "9ft ceiling walls trim and doors", value: 400 },
+      { label: "10ft ceiling walls trim and doors", value: 450 },
+      { label: "Vaulted ceiling", value: 600 },
+      { label: "8ft walls and ceilings", value: 275 },
+      { label: "9ft walls and ceilings", value: 325 },
+      { label: "10ft walls and ceilings", value: 385 },
+      { label: "8ft walls", value: 225 },
+      { label: "9ft walls", value: 275 },
+      { label: "10ft walls", value: 325 },
+      { label: "Just ceiling", value: 150 },
+      { label: "Just trim and doors", value: 125 },
+      { label: "Custom Cost", value: "custom" }, // Add custom option for cost
+    ]
+  );
 
   const roomOptions = [
     "Kitchen",
@@ -168,6 +171,15 @@ const NewInvoice = () => {
   const removePaint = (index) =>
     setPaints(paints.filter((_, i) => i !== index));
 
+  // Toggle Edit Prices
+  const toggleEditPrices = () => setEditPrices(!editPrices);
+
+  // Save the edited prices to localStorage
+  const savePrices = () => {
+    localStorage.setItem("invoiceCostOptions", JSON.stringify(costOptions));
+    toggleEditPrices(); // Close the price editing modal
+  };
+
   return (
     <div className="max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg">
       {/* Header with Home Button */}
@@ -285,7 +297,44 @@ const NewInvoice = () => {
             >
               Add Paint
             </button>
+            <button
+              className="bg-darkBlue text-white p-2 rounded w-full sm:w-auto"
+              onClick={toggleEditPrices}
+            >
+              Edit Prices
+            </button>
           </div>
+
+          {/* Edit Room Prices Section */}
+          {editPrices && (
+            <div className="bg-gray-100 p-4 rounded-lg mb-4">
+              <h3 className="text-lg font-bold mb-2">Edit Room Prices</h3>
+              {costOptions.map((option, index) => (
+                <div key={index} className="mb-2">
+                  <label className="block text-sm font-bold">
+                    {option.label}:
+                  </label>
+                  <input
+                    type="number"
+                    value={option.value}
+                    onChange={(e) => {
+                      const updatedPrices = [...costOptions];
+                      updatedPrices[index].value =
+                        parseFloat(e.target.value) || 0;
+                      setCostOptions(updatedPrices);
+                    }}
+                    className="border rounded w-full p-2"
+                  />
+                </div>
+              ))}
+              <button
+                className="bg-pink text-white p-2 mt-4 rounded w-full"
+                onClick={savePrices}
+              >
+                Save Prices
+              </button>
+            </div>
+          )}
 
           {/* Display added Rooms */}
           {rooms.length > 0 && (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import jsPDF from 'jspdf';
 
 const StaffPayouts = () => {
   const [payments, setPayments] = useState([]);
@@ -11,9 +12,10 @@ const StaffPayouts = () => {
     amount: '',
     gst: false,
   });
-  const [filterName, setFilterName] = useState(''); // State to track name filtering
+  const [filterName, setFilterName] = useState('');
+  const [filterDate, setFilterDate] = useState(''); // Added date filter
 
-  const navigate = useNavigate(); // To navigate between pages
+  const navigate = useNavigate();
 
   // Load payments from localStorage when the component mounts
   useEffect(() => {
@@ -52,8 +54,8 @@ const StaffPayouts = () => {
   // Edit payment
   const editPayment = (index) => {
     const paymentToEdit = payments[index];
-    setPaymentForm(paymentToEdit); // Pre-fill form with selected payment
-    deletePayment(index); // Remove payment so it can be re-added on save
+    setPaymentForm(paymentToEdit);
+    deletePayment(index);
     setShowForm(true); // Show the form for editing
   };
 
@@ -63,15 +65,26 @@ const StaffPayouts = () => {
     setPayments(updatedPayments);
   };
 
-  // Handle Print
-  const handlePrint = () => {
-    window.print();
-  };
+  // Filter payments by name and date
+  const filteredPayments = payments.filter((payment) => {
+    const matchesName = payment.name.toLowerCase().includes(filterName.toLowerCase());
+    const matchesDate = filterDate === '' || new Date(payment.date).getFullYear() === parseInt(filterDate);
+    return matchesName && matchesDate;
+  });
 
-  // Filtered payments by name
-  const filteredPayments = payments.filter((payment) =>
-    payment.name.toLowerCase().includes(filterName.toLowerCase())
-  );
+  // Generate PDF
+  const handlePrintPayouts = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(10);
+    doc.text('Payouts Report', 10, 10);
+
+    filteredPayments.forEach((payment, index) => {
+      const line = `${payment.date} | ${payment.name} | ${payment.description} | $${payment.total.toFixed(2)} | ${payment.gst ? 'GST' : 'No GST'}`;
+      doc.text(line, 10, 20 + index * 10);
+    });
+
+    doc.save('staff_payouts.pdf');
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
@@ -81,7 +94,7 @@ const StaffPayouts = () => {
           <h1 className="text-2xl font-bold">Staff Payouts</h1>
         </div>
         <div className="flex space-x-4">
-          {/* Home button in green color */}
+          {/* Home button */}
           <button
             className="bg-green text-white p-2 rounded"
             onClick={() => navigate('/')}
@@ -98,13 +111,12 @@ const StaffPayouts = () => {
         </div>
       </header>
 
-      {/* Filter by Name */}
+      {/* Filter Section */}
       <div className="mb-4">
         <label htmlFor="filterName" className="block font-bold mb-2">Filter by Name:</label>
         <input
           type="text"
           id="filterName"
-          name="filterName"
           value={filterName}
           onChange={(e) => setFilterName(e.target.value)}
           className="border rounded p-2 w-full"
@@ -112,10 +124,22 @@ const StaffPayouts = () => {
         />
       </div>
 
+      <div className="mb-4">
+        <label htmlFor="filterDate" className="block font-bold mb-2">Filter by Year:</label>
+        <input
+          type="number"
+          id="filterDate"
+          value={filterDate}
+          onChange={(e) => setFilterDate(e.target.value)}
+          className="border rounded p-2 w-full"
+          placeholder="Enter year..."
+        />
+      </div>
+
       {/* Print Button */}
       <button
         className="bg-green text-white p-2 rounded mb-4"
-        onClick={handlePrint}
+        onClick={handlePrintPayouts}
       >
         Print Payouts
       </button>

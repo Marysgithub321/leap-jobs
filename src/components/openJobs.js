@@ -1,101 +1,144 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const OpenJobs = () => {
-  const navigate = useNavigate(); // Hook for navigation
-
-  // State to hold open jobs
+  const navigate = useNavigate();
   const [openJobs, setOpenJobs] = useState([]);
+
+  // States for new entries
   const [newExpenseDescription, setNewExpenseDescription] = useState("");
   const [newExpenseAmount, setNewExpenseAmount] = useState("");
+  const [newExpenseReceipt, setNewExpenseReceipt] = useState(null); // State for uploaded receipt image
+  const [newExtraType, setNewExtraType] = useState("");
+  const [newExtraCost, setNewExtraCost] = useState("");
+  const [newPaintType, setNewPaintType] = useState("");
+  const [newPaintCost, setNewPaintCost] = useState("");
 
   // Load open jobs from localStorage on component mount
   useEffect(() => {
-    const savedOpenJobs = JSON.parse(localStorage.getItem('openJobs')) || [];
+    const savedOpenJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
     setOpenJobs(savedOpenJobs);
   }, []);
 
-  // Function to delete an open job
-  const deleteJob = (index) => {
-    const updatedJobs = openJobs.filter((_, i) => i !== index);
+  // Save jobs to localStorage
+  const saveJobs = (updatedJobs) => {
     setOpenJobs(updatedJobs);
-    localStorage.setItem('openJobs', JSON.stringify(updatedJobs)); // Update localStorage
+    localStorage.setItem("openJobs", JSON.stringify(updatedJobs));
   };
 
-  // Function to move a job to the "closed jobs" section
+  // Function to delete a job
+  const deleteJob = (index) => {
+    const updatedJobs = openJobs.filter((_, i) => i !== index);
+    saveJobs(updatedJobs);
+  };
+
+  // Function to move a job to closed jobs
   const closeJob = (index) => {
-    const closedJobs = JSON.parse(localStorage.getItem('closedJobs')) || [];
+    const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
     closedJobs.push(openJobs[index]);
-
-    // Update localStorage for closed jobs
-    localStorage.setItem('closedJobs', JSON.stringify(closedJobs));
-
-    // Remove the job from open jobs
+    localStorage.setItem("closedJobs", JSON.stringify(closedJobs));
     deleteJob(index);
+  };
+
+  // Handle receipt image upload
+  const handleReceiptUpload = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setNewExpenseReceipt(reader.result); // Convert image to Base64 string
+    };
+    if (file) {
+      reader.readAsDataURL(file);
+    }
   };
 
   // Function to add or update an expense for a specific job
   const addExpense = (jobIndex, description, amount) => {
-    if (!description || !amount) return; // Do not allow empty values
+    if (!description || !amount) return;
 
     const updatedJobs = [...openJobs];
-    const expense = { description, amount: parseFloat(amount) };
-
-    // Add the new expense to the job's expenses
+    const expense = {
+      description,
+      amount: parseFloat(amount),
+      receipt: newExpenseReceipt, // Store the uploaded receipt (Base64 string)
+    };
     updatedJobs[jobIndex].expenses = updatedJobs[jobIndex].expenses || [];
     updatedJobs[jobIndex].expenses.push(expense);
+    updatedJobs[jobIndex].subtotal += parseFloat(amount);
+    saveJobs(updatedJobs);
 
-    // Update the total to include the expense
-    updatedJobs[jobIndex].total += parseFloat(amount);
-
-    setOpenJobs(updatedJobs);
-    localStorage.setItem('openJobs', JSON.stringify(updatedJobs)); // Save updated jobs to localStorage
-
-    // Reset expense fields
-    setNewExpenseDescription('');
-    setNewExpenseAmount('');
+    // Reset input fields
+    setNewExpenseDescription("");
+    setNewExpenseAmount("");
+    setNewExpenseReceipt(null); // Reset receipt state
   };
 
-  // Function to delete an expense
-  const deleteExpense = (jobIndex, expenseIndex) => {
+  // Function to add an extra
+  const addExtra = (jobIndex, type, cost) => {
+    if (!type || !cost) return;
+
     const updatedJobs = [...openJobs];
-    const expenseAmount = updatedJobs[jobIndex].expenses[expenseIndex].amount;
+    const extra = { type, cost: parseFloat(cost) };
+    updatedJobs[jobIndex].extras = updatedJobs[jobIndex].extras || [];
+    updatedJobs[jobIndex].extras.push(extra);
+    updatedJobs[jobIndex].subtotal += parseFloat(cost);
+    saveJobs(updatedJobs);
 
-    // Remove the expense from the list
-    updatedJobs[jobIndex].expenses.splice(expenseIndex, 1);
-
-    // Update the total after removing the expense
-    updatedJobs[jobIndex].total -= expenseAmount;
-
-    setOpenJobs(updatedJobs);
-    localStorage.setItem('openJobs', JSON.stringify(updatedJobs)); // Save updated jobs to localStorage
+    // Reset input fields
+    setNewExtraType("");
+    setNewExtraCost("");
   };
 
-  // Function to add notes for rooms, extras, and paints
+  // Function to add a paint
+  const addPaint = (jobIndex, type, cost) => {
+    if (!type || !cost) return;
+
+    const updatedJobs = [...openJobs];
+    const paint = { type, cost: parseFloat(cost) };
+    updatedJobs[jobIndex].paints = updatedJobs[jobIndex].paints || [];
+    updatedJobs[jobIndex].paints.push(paint);
+    updatedJobs[jobIndex].subtotal += parseFloat(cost);
+    saveJobs(updatedJobs);
+
+    // Reset input fields
+    setNewPaintType("");
+    setNewPaintCost("");
+  };
+
+  // Function to delete an item (expense, extra, paint)
+  const deleteItem = (jobIndex, itemIndex, type) => {
+    const updatedJobs = [...openJobs];
+    const itemAmount = updatedJobs[jobIndex][type][itemIndex].cost || updatedJobs[jobIndex][type][itemIndex].amount;
+    updatedJobs[jobIndex][type].splice(itemIndex, 1);
+    updatedJobs[jobIndex].subtotal -= itemAmount;
+    saveJobs(updatedJobs);
+  };
+
+  // Function to update notes for rooms, extras, or paints
   const updateNote = (jobIndex, itemIndex, type, value) => {
     const updatedJobs = [...openJobs];
-    updatedJobs[jobIndex][type][itemIndex].note = value; // Update the note for the specified type
-    setOpenJobs(updatedJobs);
-    localStorage.setItem('openJobs', JSON.stringify(updatedJobs)); // Save updated jobs to localStorage
+    updatedJobs[jobIndex][type][itemIndex].note = value;
+    saveJobs(updatedJobs);
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* Header with Home Button */}
+      {/* Header */}
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Open Jobs</h1>
         <button
-          className="bg-green text-white p-2 rounded hover:bg-green-600"
-          onClick={() => navigate('/')} // Navigate back to the dashboard
+          className="bg-green text-white p-2 rounded"
+          onClick={() => navigate("/")}
         >
           Home
         </button>
       </header>
 
-      {/* Display Open Jobs */}
+      {/* Job List */}
       {openJobs.length > 0 ? (
         openJobs.map((job, jobIndex) => (
           <div key={jobIndex} className="mb-6 p-4 bg-gray-100 rounded-lg shadow">
+            {/* Job Summary */}
             <div className="flex justify-between mb-2 font-semibold text-gray-700">
               <span>Job #{job.jobNumber}</span>
               <span>{job.customerName}</span>
@@ -106,10 +149,9 @@ const OpenJobs = () => {
             <div className="mb-4">
               <p>Address: {job.address}</p>
               <p>Phone: {job.phoneNumber}</p>
-              <p>Total: ${job.total.toFixed(2)}</p>
             </div>
 
-            {/* Add Notes for each Room */}
+            {/* Room Notes */}
             <div className="mb-4">
               <h3 className="font-semibold">Room Notes</h3>
               {job.rooms.map((room, roomIndex) => (
@@ -125,17 +167,74 @@ const OpenJobs = () => {
               ))}
             </div>
 
-            {/* List of Expenses */}
+            {/* Extra Notes */}
+            {job.extras && job.extras.length > 0 && (
+              <div className="mb-4">
+                <h3 className="font-semibold">Extra Notes</h3>
+                {job.extras.map((extra, extraIndex) => (
+                  <div key={extraIndex} className="mb-2">
+                    <p>{extra.type} - ${extra.cost}</p>
+                    <textarea
+                      className="border p-2 w-full"
+                      placeholder="Add note for this extra"
+                      value={extra.note || ""}
+                      onChange={(e) => updateNote(jobIndex, extraIndex, "extras", e.target.value)}
+                    />
+                    <button
+                      className="bg-pink text-white p-1 rounded mt-2"
+                      onClick={() => deleteItem(jobIndex, extraIndex, "extras")}
+                    >
+                      Delete Extra
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Paint Notes */}
+            {job.paints && job.paints.length > 0 && (
+              <div className="mb-4">
+                <h3 className="font-semibold">Paint Notes</h3>
+                {job.paints.map((paint, paintIndex) => (
+                  <div key={paintIndex} className="mb-2">
+                    <p>{paint.type} - ${paint.cost}</p>
+                    <textarea
+                      className="border p-2 w-full"
+                      placeholder="Add note for this paint"
+                      value={paint.note || ""}
+                      onChange={(e) => updateNote(jobIndex, paintIndex, "paints", e.target.value)}
+                    />
+                    <button
+                      className="bg-pink text-white p-1 rounded mt-2"
+                      onClick={() => deleteItem(jobIndex, paintIndex, "paints")}
+                    >
+                      Delete Paint
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Expense List */}
             <div className="mb-4">
               <h3 className="font-semibold">Expenses</h3>
               {job.expenses && job.expenses.length > 0 ? (
                 job.expenses.map((expense, expenseIndex) => (
                   <div key={expenseIndex} className="flex justify-between mb-2">
-                    <span>{expense.description}</span>
-                    <span>${expense.amount.toFixed(2)}</span>
+                    <div>
+                      <span>{expense.description}</span>
+                      <span className="ml-4">${expense.amount.toFixed(2)}</span>
+                      {expense.receipt && (
+                        <img
+                          src={expense.receipt}
+                          alt="Receipt"
+                          className="w-20 h-20 object-cover mt-2"
+                        />
+                      )}
+                    </div>
                     <button
                       className="bg-pink text-white p-1 rounded"
-                      onClick={() => deleteExpense(jobIndex, expenseIndex)}
+                      onClick={() => deleteItem(jobIndex, expenseIndex, "expenses")}
                     >
                       Delete Expense
                     </button>
@@ -162,6 +261,12 @@ const OpenJobs = () => {
                 value={newExpenseAmount}
                 onChange={(e) => setNewExpenseAmount(e.target.value)}
               />
+              <input
+                type="file"
+                accept="image/*"
+                className="border p-2 w-full mb-2"
+                onChange={handleReceiptUpload} // Handle receipt upload
+              />
               <button
                 className="bg-blue text-white p-2 rounded"
                 onClick={() => addExpense(jobIndex, newExpenseDescription, newExpenseAmount)}
@@ -170,24 +275,22 @@ const OpenJobs = () => {
               </button>
             </div>
 
+           
+
             {/* Action Buttons */}
             <div className="flex space-x-4">
               <button
                 className="bg-blue text-white p-2 rounded"
-                onClick={() => {
-                  navigate('/estimate-calculator', { state: { job, jobIndex } });
-                }}
+                onClick={() => navigate("/estimate-calculator", { state: { job, jobIndex } })}
               >
                 Edit Job
               </button>
-
               <button
                 className="bg-tealLight text-white p-2 rounded"
                 onClick={() => closeJob(jobIndex)}
               >
                 Close Job
               </button>
-
               <button
                 className="bg-pink text-white p-2 rounded"
                 onClick={() => deleteJob(jobIndex)}
@@ -200,15 +303,15 @@ const OpenJobs = () => {
             <div className="section-bordered border-t mt-4 pt-4">
               <div className="flex justify-between">
                 <p>Subtotal:</p>
-                <p>${job.total.toFixed(2)}</p>
+                <p>${job.subtotal.toFixed(2)}</p>
               </div>
               <div className="flex justify-between">
                 <p>GST/HST (13%):</p>
-                <p>${(job.total * 0.13).toFixed(2)}</p>
+                <p>${(job.subtotal * 0.13).toFixed(2)}</p>
               </div>
               <div className="flex justify-between font-bold">
                 <p>Total:</p>
-                <p>${(job.total * 1.13).toFixed(2)}</p>
+                <p>${(job.subtotal * 1.13).toFixed(2)}</p>
               </div>
             </div>
           </div>
