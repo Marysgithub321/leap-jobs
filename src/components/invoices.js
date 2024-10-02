@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { jsPDF } from "jspdf";
 
 const Invoices = () => {
@@ -46,7 +46,9 @@ const Invoices = () => {
       {/* Display the job details passed from PastJobs */}
       {job && (
         <div className="mb-4 p-4 bg-gray-100 rounded-lg shadow">
-          <p>{`Date: ${job.date || "N/A"} | Job Number: ${job.jobNumber || "N/A"}`}</p>
+          <p>{`Date: ${job.date || "N/A"} | Job Number: ${
+            job.estimateNumber || "N/A"
+          }`}</p>
           <p>{`Customer Name: ${job.customerName || "N/A"}`}</p>
           <p>{`Phone Number: ${job.phoneNumber || "N/A"}`}</p>
           <p>{`Address: ${job.address || "N/A"}`}</p>
@@ -58,7 +60,9 @@ const Invoices = () => {
               <ul>
                 {job.rooms.map((room, i) => (
                   <li key={i}>
-                    {`${room.roomName}: $${parseFloat(room.cost || 0).toFixed(2)} - Notes: ${room.note || "No notes"}`}
+                    {`${room.roomName}: $${parseFloat(room.cost || 0).toFixed(
+                      2
+                    )}  ${room.note || "No notes"}`}
                   </li>
                 ))}
               </ul>
@@ -72,37 +76,28 @@ const Invoices = () => {
               <ul>
                 {job.extras.map((extra, i) => (
                   <li key={i}>
-                    {`${extra.type}: $${parseFloat(extra.cost || 0).toFixed(2)} - Notes: ${extra.note || "No notes"}`}
+                    {`${extra.type}: $${parseFloat(extra.cost || 0).toFixed(
+                      2
+                    )} - Notes: ${extra.note || "No notes"}`}
                   </li>
                 ))}
               </ul>
             </div>
           )}
 
-          {/* Display Paint details */}
-          {job.paints && job.paints.length > 0 && (
+          {/* Display Description details */}
+          {job.description && (
             <div className="mb-4">
-              <h3 className="font-semibold">Paints</h3>
+              <h3 className="font-semibold">Description</h3>
               <ul>
-                {job.paints.map((paint, i) => (
-                  <li key={i}>
-                    {`${paint.type}: $${parseFloat(paint.cost || 0).toFixed(2)} - Notes: ${paint.note || "No notes"}`}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Display Expense details */}
-          {job.expenses && job.expenses.length > 0 && (
-            <div className="mb-4">
-              <h3 className="font-semibold">Expenses</h3>
-              <ul>
-                {job.expenses.map((expense, i) => (
-                  <li key={i}>
-                    {`${expense.description}: $${expense.amount.toFixed(2)}`}
-                  </li>
-                ))}
+                <li>
+                  {/* Display description and custom description if applicable */}
+                  {job.description === "Other" && job.customDescription
+                    ? `${job.customDescription} - Notes: ${
+                        job.notes || "No notes"
+                      }`
+                    : `${job.description}: Notes: ${job.notes || "No notes"}`}
+                </li>
               </ul>
             </div>
           )}
@@ -123,7 +118,10 @@ const Invoices = () => {
             </div>
           </div>
 
-          <button className="bg-darkBlue text-white p-2 mt-4 rounded" onClick={saveInvoice}>
+          <button
+            className="bg-darkBlue text-white p-2 mt-4 rounded"
+            onClick={saveInvoice}
+          >
             Save Invoice
           </button>
         </div>
@@ -133,7 +131,9 @@ const Invoices = () => {
       {invoices.length > 0 ? (
         invoices.map((invoice, index) => (
           <div key={index} className="mb-4 p-4 bg-gray-100 rounded-lg shadow">
-            <p>{`Date: ${invoice.date || "N/A"} | Job Number: ${invoice.jobNumber || "N/A"}`}</p>
+            <p>{`Date: ${invoice.date || "N/A"} | Invoice Number: ${
+              invoice.estimateNumber || "N/A"
+            }`}</p>
             <p>{`Customer Name: ${invoice.customerName || "N/A"}`}</p>
             <p>{`Phone Number: ${invoice.phoneNumber || "N/A"}`}</p>
             <p>{`Address: ${invoice.address || "N/A"}`}</p>
@@ -145,7 +145,9 @@ const Invoices = () => {
                 <ul>
                   {invoice.rooms.map((room, i) => (
                     <li key={i}>
-                      {`${room.roomName}: $${parseFloat(room.cost || 0).toFixed(2)} - Notes: ${room.note || "No notes"}`}
+                      {`${room.roomName}: $${parseFloat(room.cost || 0).toFixed(
+                        2
+                      )} - Notes: ${room.note || "No notes"}`}
                     </li>
                   ))}
                 </ul>
@@ -159,37 +161,30 @@ const Invoices = () => {
                 <ul>
                   {invoice.extras.map((extra, i) => (
                     <li key={i}>
-                      {`${extra.type}: $${parseFloat(extra.cost || 0).toFixed(2)} - Notes: ${extra.note || "No notes"}`}
+                      {`${extra.type}: $${parseFloat(extra.cost || 0).toFixed(
+                        2
+                      )} - Notes: ${extra.note || "No notes"}`}
                     </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Display Paint details */}
-            {invoice.paints && invoice.paints.length > 0 && (
+            {/* Display Description details */}
+            {invoice.description && (
               <div className="mb-4">
-                <h3 className="font-semibold">Paints</h3>
+                <h3 className="font-semibold">Description</h3>
                 <ul>
-                  {invoice.paints.map((paint, i) => (
-                    <li key={i}>
-                      {`${paint.type}: $${parseFloat(paint.cost || 0).toFixed(2)} - Notes: ${paint.note || "No notes"}`}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Display Expense details */}
-            {invoice.expenses && invoice.expenses.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-semibold">Expenses</h3>
-                <ul>
-                  {invoice.expenses.map((expense, i) => (
-                    <li key={i}>
-                      {`${expense.description}: $${expense.amount.toFixed(2)}`}
-                    </li>
-                  ))}
+                  <li>
+                    {/* Display description and custom description if applicable */}
+                    {invoice.description === "Other" && invoice.customDescription
+                      ? `${invoice.customDescription} - Notes: ${
+                          invoice.notes || "No notes"
+                        }`
+                      : `${invoice.description}: Notes: ${
+                          invoice.notes || "No notes"
+                        }`}
+                  </li>
                 </ul>
               </div>
             )}
@@ -210,16 +205,30 @@ const Invoices = () => {
               </div>
             </div>
 
-            {/* Button actions: Download PDF and Delete Invoice */}
+            {/* Button actions: Download PDF, Edit Invoice, and Delete Invoice */}
             <div className="flex space-x-4">
               <button
                 className="bg-darkBlue text-white p-2 mt-4 rounded"
                 onClick={() => {
                   const doc = new jsPDF();
                   doc.text("Invoice", 10, 10);
-                  doc.text(`Date: ${invoice.date || "N/A"} | Job Number: ${invoice.jobNumber || "N/A"}`, 10, 30);
-                  doc.text(`Customer Name: ${invoice.customerName || "N/A"}`, 10, 40);
-                  doc.text(`Phone Number: ${invoice.phoneNumber || "N/A"}`, 10, 50);
+                  doc.text(
+                    `Date: ${invoice.date || "N/A"} | Invoice Number: ${
+                      invoice.estimateNumber || "N/A"
+                    }`,
+                    10,
+                    30
+                  );
+                  doc.text(
+                    `Customer Name: ${invoice.customerName || "N/A"}`,
+                    10,
+                    40
+                  );
+                  doc.text(
+                    `Phone Number: ${invoice.phoneNumber || "N/A"}`,
+                    10,
+                    50
+                  );
                   doc.text(`Address: ${invoice.address || "N/A"}`, 10, 60);
 
                   // Add rooms to the PDF
@@ -229,7 +238,9 @@ const Invoices = () => {
                     lineHeight += 10;
                     invoice.rooms.forEach((room) => {
                       doc.text(
-                        `${room.roomName || "N/A"}: $${parseFloat(room.cost || 0).toFixed(2)}`,
+                        `${room.roomName || "N/A"}: $${parseFloat(
+                          room.cost || 0
+                        ).toFixed(2)}`,
                         10,
                         lineHeight
                       );
@@ -243,7 +254,9 @@ const Invoices = () => {
                     lineHeight += 10;
                     invoice.extras.forEach((extra) => {
                       doc.text(
-                        `${extra.type || "N/A"}: $${parseFloat(extra.cost || 0).toFixed(2)}`,
+                        `${extra.type || "N/A"}: $${parseFloat(
+                          extra.cost || 0
+                        ).toFixed(2)}`,
                         10,
                         lineHeight
                       );
@@ -251,46 +264,63 @@ const Invoices = () => {
                     });
                   }
 
-                  // Add paints to the PDF
-                  if (invoice.paints && invoice.paints.length > 0) {
-                    doc.text("Paints:", 10, lineHeight);
+                  // Add description to the PDF
+                  if (invoice.description) {
+                    doc.text("Description:", 10, lineHeight);
                     lineHeight += 10;
-                    invoice.paints.forEach((paint) => {
-                      doc.text(
-                        `${paint.type || "N/A"}: $${parseFloat(paint.cost || 0).toFixed(2)}`,
-                        10,
-                        lineHeight
-                      );
-                      lineHeight += 10;
-                    });
-                  }
-
-                  // Add expenses to the PDF
-                  if (invoice.expenses && invoice.expenses.length > 0) {
-                    doc.text("Expenses:", 10, lineHeight);
+                    doc.text(
+                      `${
+                        invoice.description === "Other" &&
+                        invoice.customDescription
+                          ? invoice.customDescription
+                          : invoice.description
+                      }: Notes: ${invoice.notes || "No notes"}`,
+                      10,
+                      lineHeight
+                    );
                     lineHeight += 10;
-                    invoice.expenses.forEach((expense) => {
-                      doc.text(
-                        `${expense.description || "N/A"}: $${expense.amount.toFixed(2)}`,
-                        10,
-                        lineHeight
-                      );
-                      lineHeight += 10;
-                    });
                   }
 
                   // Add totals to the PDF
-                  doc.text(`Subtotal: $${parseFloat(invoice.subtotal || 0).toFixed(2)}`, 10, lineHeight + 10);
-                  doc.text(`GST/HST: $${parseFloat(invoice.subtotal * 0.13 || 0).toFixed(2)}`, 10, lineHeight + 20);
-                  doc.text(`Total: $${parseFloat(invoice.subtotal * 1.13 || 0).toFixed(2)}`, 10, lineHeight + 30);
+                  doc.text(
+                    `Subtotal: $${parseFloat(
+                      invoice.subtotal || 0
+                    ).toFixed(2)}`,
+                    10,
+                    lineHeight + 10
+                  );
+                  doc.text(
+                    `GST/HST: $${parseFloat(
+                      invoice.subtotal * 0.13 || 0
+                    ).toFixed(2)}`,
+                    10,
+                    lineHeight + 20
+                  );
+                  doc.text(
+                    `Total: $${parseFloat(
+                      invoice.subtotal * 1.13 || 0
+                    ).toFixed(2)}`,
+                    10,
+                    lineHeight + 30
+                  );
 
-                  doc.save(`Invoice_${invoice.jobNumber || "N/A"}.pdf`);
+                  doc.save(`Invoice_${invoice.customerName || "N/A"}.pdf`);
                 }}
               >
                 Download PDF
               </button>
 
-              <button className="bg-pink text-white p-2 mt-4 rounded" onClick={() => deleteInvoice(index)}>
+              <button
+                className="bg-blue text-white p-2 mt-4 rounded"
+                onClick={() => navigate("/new-invoice", { state: { job: invoice } })}
+              >
+                Edit Invoice
+              </button>
+
+              <button
+                className="bg-pink text-white p-2 mt-4 rounded"
+                onClick={() => deleteInvoice(index)}
+              >
                 Delete Invoice
               </button>
             </div>

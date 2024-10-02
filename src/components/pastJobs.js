@@ -46,7 +46,7 @@ const PastJobs = () => {
             className="mb-6 p-4 bg-gray-100 rounded-lg shadow"
           >
             <div className="flex justify-between mb-2 font-semibold text-gray-700">
-              <span>Job #{job.jobNumber}</span>
+              <span>Job #{job.estimateNumber}</span>
               <span>{job.customerName}</span>
               <span>{job.date}</span>
             </div>
@@ -64,7 +64,6 @@ const PastJobs = () => {
                   <div key={roomIndex} className="mb-2">
                     <p>Room: {room.roomName}</p>
                     <p>Cost: ${room.cost}</p>
-                    <p>Notes: {room.note || "No notes"}</p>
                   </div>
                 ))}
             </div>
@@ -77,37 +76,27 @@ const PastJobs = () => {
                   <div key={extraIndex} className="mb-2">
                     <p>Extra: {extra.type}</p>
                     <p>Cost: ${extra.cost}</p>
-                    <p>Notes: {extra.note || "No notes"}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Display Paint details */}
-            {job.paints && job.paints.length > 0 && (
+            {/* Display Description details */}
+            {job.description && (
               <div className="mb-4">
-                <h3 className="font-semibold">Paints</h3>
-                {job.paints.map((paint, paintIndex) => (
-                  <div key={paintIndex} className="mb-2">
-                    <p>Paint: {paint.type}</p>
-                    <p>Cost: ${paint.cost}</p>
-                    <p>Notes: {paint.note || "No notes"}</p>
-                  </div>
-                ))}
+                <h3 className="font-semibold">Description</h3>
+                <ul>
+                  <li>
+                    {/* Display description and custom description if applicable */}
+                    {job.description === "Other" && job.customDescription
+                      ? `${job.customDescription} - Notes: ${
+                          job.notes || "No notes"
+                        }`
+                      : `${job.description}: Notes: ${job.notes || "No notes"}`}
+                  </li>
+                </ul>
               </div>
             )}
-
-            {/* Display Expense details */}
-            <div className="mb-4">
-              <h3 className="font-semibold">Expenses</h3>
-              {job.expenses &&
-                job.expenses.map((expense, expenseIndex) => (
-                  <div key={expenseIndex} className="mb-2">
-                    <p>Expense: {expense.description}</p>
-                    <p>Cost: ${expense.amount.toFixed(2)}</p>
-                  </div>
-                ))}
-            </div>
 
             {/* Totals */}
             <div className="section-bordered border-t mt-4 pt-4">

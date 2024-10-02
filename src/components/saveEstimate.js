@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
-import { generateDetailedPDF } from "./DetailedEstimate"; // Import the detailed estimate function
 import LeapLogoTeal from "../images/LeapLogoTeal.png"; // Adjust the path to your actual image location
 
 const Estimates = () => {
@@ -91,7 +90,7 @@ const Estimates = () => {
       const customerName = estimate.customerName || "N/A";
       const phoneNumber = estimate.phoneNumber || "N/A";
       const address = estimate.address || "N/A";
-      const addressLines = doc.splitTextToSize(address, 70);
+      const addressLines = doc.splitTextToSize(address, 50);
 
       doc.text(customerInfoLabel, 120, 75);
       doc.line(118, 78, 195, 78);
@@ -261,14 +260,6 @@ if (gridY + 5 <= gridBoxY + gridBoxHeight) {
                 onClick={() => generatePDF(estimate)}
               >
                 Basic Estimate
-              </button>
-
-               {/* Detailed Estimate Button */}
-               <button
-                className="bg-darkBlue text-white p-2 mt-4 rounded"
-                onClick={() => generateDetailedPDF(estimate)} // Call the imported function
-              >
-                Detailed Estimate
               </button>
 
               <button

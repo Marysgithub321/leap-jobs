@@ -108,12 +108,7 @@ const Expenses = () => {
           >
             Home
           </button>
-          <button
-            className="bg-blue text-white p-2 rounded"
-            onClick={() => navigate('/open-jobs')} // Navigate to Open Jobs to add expenses
-          >
-            Add Expense
-          </button>
+          
         </div>
       </header>
 

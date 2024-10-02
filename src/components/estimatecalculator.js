@@ -6,83 +6,118 @@ const EstimateCalculator = () => {
   const navigate = useNavigate();
 
   // Extract both job and estimate data from location.state (whichever exists)
-  const initialData = location.state?.job || location.state?.estimate || {};
+  const initialData = location.state?.estimate || {};
 
-  // Initialize form state with either job or estimate
-  const [customerName, setCustomerName] = useState(initialData.customerName || "");
-  const [jobNumber, setJobNumber] = useState(initialData.jobNumber || "");
+  // Initialize form state with estimate data
+  const [customerName, setCustomerName] = useState(
+    initialData.customerName || ""
+  );
+  const [estimateNumber, setEstimateNumber] = useState(initialData.estimateNumber || "");
   const [date, setDate] = useState(initialData.date || "");
   const [address, setAddress] = useState(initialData.address || "");
   const [phoneNumber, setPhoneNumber] = useState(initialData.phoneNumber || "");
   const [rooms, setRooms] = useState(initialData.rooms || []);
   const [extras, setExtras] = useState(initialData.extras || []);
-  const [paints, setPaints] = useState(initialData.paints || []);
   const [total, setTotal] = useState(initialData.total || 0);
   const [gstHst, setGstHst] = useState(initialData.gstHst || 0);
   const [editPrices, setEditPrices] = useState(false); // For price editing
 
-  // Load room prices from localStorage (if available) or use default cost options
-  const [costOptions, setCostOptions] = useState(
-    JSON.parse(localStorage.getItem("costOptions")) || [
-      { label: "8ft ceiling walls trim and doors", value: 350 },
-      { label: "9ft ceiling walls trim and doors", value: 400 },
-      { label: "10ft ceiling walls trim and doors", value: 450 },
-      { label: "Vaulted ceiling", value: 600 },
-      { label: "8ft walls and ceilings", value: 275 },
-      { label: "9ft walls and ceilings", value: 325 },
-      { label: "10ft walls and ceilings", value: 385 },
-      { label: "8ft walls", value: 225 },
-      { label: "9ft walls", value: 275 },
-      { label: "10ft walls", value: 325 },
-      { label: "Just ceiling", value: 150 },
-      { label: "Just trim and doors", value: 125 },
-    ]
-  );
+  // Default cost options
+  const defaultCostOptions = [
+    { label: "8ft ceiling walls trim and doors", value: 350 },
+    { label: "9ft ceiling walls trim and doors", value: 400 },
+    { label: "10ft ceiling walls trim and doors", value: 450 },
+    { label: "Vaulted ceiling", value: 600 },
+    { label: "8ft walls and ceilings", value: 275 },
+    { label: "9ft walls and ceilings", value: 325 },
+    { label: "10ft walls and ceilings", value: 385 },
+    { label: "8ft walls", value: 225 },
+    { label: "9ft walls", value: 275 },
+    { label: "10ft walls", value: 325 },
+    { label: "Just ceiling", value: 150 },
+    { label: "Painting Stairs", value: 125 },
+    { label: "Staining Stairs", value: 500 },
+    { label: "Matching Stain to floor", value: 600 },
+    { label: "Staining Beam", value: 250 },
+    { label: "Painting Railing", value: 450 },
+    { label: "Staining Railing", value: 550 },
+    { label: "Other", value: 50 },
+  ];
 
-  const extraOptions = ["Stairs - Stain or Paint", "Railings", "Other"];
-  const paintOptions = ["Primer", "Paint", "Stain", "Other"];
+  // Load cost options from localStorage, or use defaultCostOptions
+  const [costOptions, setCostOptions] = useState(() => {
+    const savedCostOptions =
+      JSON.parse(localStorage.getItem("costOptions")) || [];
+    // Merge saved options with default options
+    const mergedOptions = [...defaultCostOptions];
+
+    // Update values in mergedOptions based on localStorage, or add new options
+    savedCostOptions.forEach((savedOption) => {
+      const index = mergedOptions.findIndex(
+        (opt) => opt.label === savedOption.label
+      );
+      if (index !== -1) {
+        mergedOptions[index].value = savedOption.value; // Update existing options
+      } else {
+        mergedOptions.push(savedOption); // Add new options
+      }
+    });
+
+    // Save merged options back to localStorage
+    localStorage.setItem("costOptions", JSON.stringify(mergedOptions));
+
+    return mergedOptions;
+  });
+
+  const extraOptions = ["Paint", "Stain", "Primer", "Travel", "Other"];
   const roomOptions = [
+    "Front Entry",
+    "Living Room",
     "Kitchen",
+    "Dining Room",
+    "Hall",
     "Master Bedroom",
+    "Master Bath",
     "Walk-in closet",
     "Bedroom 2",
     "Bedroom 3",
-    "Bedroom 4",
-    "Bedroom 5",
+    "Main Bath",
     "Office",
     "Nursery",
+    "Stairway",
     "Play Room",
     "Laundry Room",
-    "Living Room",
     "Rec Room",
-    "Hall",
-    "Stairway",
-    "Master Bath",
-    "Main Bath",
+    "Bedroom 4",
+    "Bedroom 5",
     "Downstairs Bath",
     "Upstairs Bath",
     "Half Bath",
-    "Front Entry",
     "Garage",
-    "Dining Room",
+    "Beam",
+    "Railing",
     "Extra Room",
+    "Stairs",
+    "Sun Room",
+    "Closet",
   ];
 
-  // Auto-generate the next job number if not editing
+  // Auto-generate the next estimate number if not editing
   useEffect(() => {
-    if (!jobNumber) {
+    if (!estimateNumber) {
       const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
-      const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
 
-      const allJobs = [...estimates, ...openJobs];
-      const jobNumbers = allJobs.map((job) => parseInt(job.jobNumber, 10));
+      const estimateNumbers = estimates.map((estimate) =>
+        parseInt(estimate.estimateNumber, 10)
+      );
 
-      const maxJobNumber = jobNumbers.length > 0 ? Math.max(...jobNumbers) : 0;
-      const nextJobNumber = (maxJobNumber + 1).toString().padStart(2, '0');
+      const maxEstimateNumber =
+        estimateNumbers.length > 0 ? Math.max(...estimateNumbers) : 0;
+      const nextEstimateNumber = (maxEstimateNumber + 1).toString().padStart(2, "0");
 
-      setJobNumber(nextJobNumber); // Set the next available job number
+      setEstimateNumber(nextEstimateNumber); // Set the next available estimate number
     }
-  }, [jobNumber]);
+  }, [estimateNumber]);
 
   // Calculate total when rooms, extras, or paints change
   const calculateTotal = useCallback(() => {
@@ -94,19 +129,16 @@ const EstimateCalculator = () => {
       (acc, extra) => acc + parseFloat(extra.cost || 0),
       0
     );
-    const paintsTotal = paints.reduce(
-      (acc, paint) => acc + parseFloat(paint.cost || 0),
-      0
-    );
-    const subtotal = roomsTotal + extrasTotal + paintsTotal;
+
+    const subtotal = roomsTotal + extrasTotal;
     setTotal(subtotal);
     setGstHst(subtotal * 0.13); // Assuming 13% GST/HST
-  }, [rooms, extras, paints]);
+  }, [rooms, extras]);
 
   // Automatically calculate total when inputs change
   useEffect(() => {
     calculateTotal();
-  }, [rooms, extras, paints, calculateTotal]);
+  }, [rooms, extras, calculateTotal]);
 
   // Add Room Handler
   const addRoom = () =>
@@ -118,10 +150,6 @@ const EstimateCalculator = () => {
   // Add Extra Handler
   const addExtra = () =>
     setExtras([...extras, { type: "", customType: "", cost: 0 }]);
-
-  // Add Paint Handler
-  const addPaint = () =>
-    setPaints([...paints, { type: "", customType: "", cost: 0 }]);
 
   // Update Room Handler
   const updateRoom = (index, field, value) => {
@@ -137,13 +165,6 @@ const EstimateCalculator = () => {
     setExtras(updatedExtras);
   };
 
-  // Update Paint Handler
-  const updatePaint = (index, field, value) => {
-    const updatedPaints = [...paints];
-    updatedPaints[index][field] = value;
-    setPaints(updatedPaints);
-  };
-
   // Toggle Edit Prices
   const toggleEditPrices = () => setEditPrices(!editPrices);
 
@@ -151,8 +172,6 @@ const EstimateCalculator = () => {
   const removeRoom = (index) => setRooms(rooms.filter((_, i) => i !== index));
   const removeExtra = (index) =>
     setExtras(extras.filter((_, i) => i !== index));
-  const removePaint = (index) =>
-    setPaints(paints.filter((_, i) => i !== index));
 
   // Function to save the edited prices to localStorage
   const savePrices = () => {
@@ -166,22 +185,23 @@ const EstimateCalculator = () => {
 
     const updatedEstimate = {
       customerName,
-      jobNumber,
+      estimateNumber,
       date,
       address,
       phoneNumber,
       rooms,
       extras,
-      paints,
       subtotal: total, // Save the calculated subtotal
       gstHst, // Save the calculated GST/HST
       total: total + gstHst, // Total including GST/HST
+      description, // Save the selected description
+      customDescription, // Save the custom description if entered
     };
 
     // Update Estimates
     const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
     const estimateIndex = estimates.findIndex(
-      (estimate) => estimate.jobNumber === jobNumber
+      (estimate) => estimate.estimateNumber === estimateNumber
     );
 
     if (estimateIndex !== -1) {
@@ -191,9 +211,7 @@ const EstimateCalculator = () => {
     }
 
     localStorage.setItem("estimates", JSON.stringify(estimates));
-
-    // Redirect to the estimates page
-    navigate("/estimates");
+    navigate("/estimates"); // Redirect to the estimates page
   };
 
   // Function to add the estimate as an open job
@@ -202,35 +220,44 @@ const EstimateCalculator = () => {
 
     const updatedEstimate = {
       customerName,
-      jobNumber,
+      estimateNumber,
       date,
       address,
       phoneNumber,
       rooms,
       extras,
-      paints,
-      subtotal: total, // Save the calculated subtotal
-      gstHst, // Save the calculated GST/HST
-      total: total + gstHst, // Total including GST/HST
+      subtotal: total,
+      gstHst,
+      total: total + gstHst,
+      description, // Save the selected description
+      customDescription, // Save the custom description if entered
     };
 
-    // Update Open Jobs
     const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
     const openJobIndex = openJobs.findIndex(
-      (job) => job.jobNumber === jobNumber
+      (job) => job.estimateNumber === estimateNumber
     );
 
     if (openJobIndex !== -1) {
-      openJobs[openJobIndex] = updatedEstimate; // Update the existing job
+      openJobs[openJobIndex] = updatedEstimate;
     } else {
       openJobs.push(updatedEstimate);
     }
 
     localStorage.setItem("openJobs", JSON.stringify(openJobs));
-
-    // Redirect to the open jobs page
-    navigate("/open-jobs");
+    navigate("/open-jobs"); // Redirect to the open jobs page
   };
+
+  // State for description
+  const [description, setDescription] = useState(""); // Track selected description
+  const [customDescription, setCustomDescription] = useState(""); // For custom description
+
+  // Add description options
+  const descriptionOptions = [
+    "Includes all labor and paint",
+    "Includes labor, paint is extra",
+    "Other", // Custom option
+  ];
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg">
@@ -250,7 +277,7 @@ const EstimateCalculator = () => {
       {/* Main Form */}
       <main className="card-container">
         <div className="card p-4 bg-gray-100 rounded-lg">
-          {/* Date and Job Number */}
+          {/* Date and Estimate Number */}
           <section className="date flex space-x-4 mb-4">
             <div className="flex-1">
               <label htmlFor="date" className="block text-sm font-bold">
@@ -267,15 +294,15 @@ const EstimateCalculator = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div>
-                <label htmlFor="jobNumber" className="block text-sm font-bold">
-                  Job Number:
+                <label htmlFor="estimateNumber" className="block text-sm font-bold">
+                  Estimate Number:
                 </label>
                 <input
                   type="text"
-                  id="jobNumber"
+                  id="estimateNumber"
                   className="border rounded p-2 w-20"
-                  value={jobNumber}
-                  onChange={(e) => setJobNumber(e.target.value)} // Allow manual override
+                  value={estimateNumber}
+                  onChange={(e) => setEstimateNumber(e.target.value)} // Allow manual override
                   required
                 />
               </div>
@@ -346,19 +373,14 @@ const EstimateCalculator = () => {
               className="bg-tealLight text-white p-2 rounded w-full sm:w-auto"
               onClick={addExtra}
             >
-              Add Extra
+              Add Extra/Paint
             </button>
-            <button
-              className="bg-pink text-white p-2 rounded w-full sm:w-auto"
-              onClick={addPaint}
-            >
-              Add Paint
-            </button>
+
             <button
               className="bg-blue text-white p-2 rounded w-full sm:w-auto"
               onClick={toggleEditPrices}
             >
-              Edit Prices
+              {editPrices ? "Close Edit Prices" : "Edit Prices"}
             </button>
           </div>
 
@@ -375,9 +397,11 @@ const EstimateCalculator = () => {
                     type="number"
                     value={option.value}
                     onChange={(e) => {
-                      const updatedOptions = [...costOptions];
-                      updatedOptions[index].value = parseFloat(e.target.value);
-                      setCostOptions(updatedOptions);
+                      const newValue = parseFloat(e.target.value) || 0; // Ensure it's a valid number
+                      const updatedOptions = costOptions.map((item, i) =>
+                        i === index ? { ...item, value: newValue } : item
+                      );
+                      setCostOptions(updatedOptions); // Update state immutably
                     }}
                     className="border rounded w-full p-2"
                   />
@@ -391,6 +415,34 @@ const EstimateCalculator = () => {
               </button>
             </div>
           )}
+
+          {/* Description Section */}
+          <div className="mb-4">
+            <label className="block text-sm font-bold mb-2">Description:</label>
+            <select
+              className="border p-2 w-full mb-2"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            >
+              <option value="">Select Description</option>
+              {descriptionOptions.map((option, index) => (
+                <option key={index} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+
+            {/* Display custom input if 'Other' is selected */}
+            {description === "Other" && (
+              <input
+                type="text"
+                className="border p-2 mb-2 w-full"
+                placeholder="Enter custom description"
+                value={customDescription}
+                onChange={(e) => setCustomDescription(e.target.value)}
+              />
+            )}
+          </div>
 
           {/* Display added Rooms, Extras, and Paints */}
           {rooms.length > 0 && (
@@ -515,69 +567,6 @@ const EstimateCalculator = () => {
                     className="bg-tealLight text-white p-2 rounded hover:bg-darkGray w-full mt-2"
                   >
                     Remove Extra
-                  </button>
-                </div>
-              ))}
-            </>
-          )}
-
-          {/* Display added Paints */}
-          {paints.length > 0 && (
-            <>
-              <h3 className="font-bold mb-2">Paints</h3>
-              {paints.map((paint, index) => (
-                <div
-                  key={index}
-                  className="section-bordered p-4 bg-white rounded-lg shadow-sm mb-4"
-                >
-                  <select
-                    className="border p-2 mb-2 w-full"
-                    value={paint.type}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      updatePaint(index, "type", value);
-                      if (value === "Other") {
-                        updatePaint(index, "customType", "");
-                      }
-                    }}
-                  >
-                    <option value="">Select Paint Type</option>
-                    {paintOptions.map((option, i) => (
-                      <option key={i} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Custom Paint Type Input */}
-                  {paint.type === "Other" && (
-                    <input
-                      type="text"
-                      className="border p-2 mb-2 w-full"
-                      placeholder="Enter custom paint type"
-                      value={paint.customType}
-                      onChange={(e) =>
-                        updatePaint(index, "customType", e.target.value)
-                      }
-                    />
-                  )}
-
-                  {/* Manually enter cost */}
-                  <input
-                    type="number"
-                    className="border p-2 mb-2 w-full"
-                    placeholder="Cost"
-                    value={paint.cost}
-                    onChange={(e) =>
-                      updatePaint(index, "cost", e.target.value)
-                    }
-                  />
-
-                  <button
-                    onClick={() => removePaint(index)}
-                    className="bg-darkBlue text-white p-2 rounded hover:bg-darkGray w-full mt-2"
-                  >
-                    Remove Paint
                   </button>
                 </div>
               ))}

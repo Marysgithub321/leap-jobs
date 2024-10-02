@@ -11,8 +11,8 @@ const OpenJobs = () => {
   const [newExpenseReceipt, setNewExpenseReceipt] = useState(null); // State for uploaded receipt image
   const [newExtraType, setNewExtraType] = useState("");
   const [newExtraCost, setNewExtraCost] = useState("");
-  const [newPaintType, setNewPaintType] = useState("");
-  const [newPaintCost, setNewPaintCost] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newCustomDescription, setNewCustomDescription] = useState("");
 
   // Load open jobs from localStorage on component mount
   useEffect(() => {
@@ -89,35 +89,46 @@ const OpenJobs = () => {
     setNewExtraCost("");
   };
 
-  // Function to add a paint
-  const addPaint = (jobIndex, type, cost) => {
-    if (!type || !cost) return;
+  // Function to add a description
+  const addDescription = (jobIndex, description, customDescription) => {
+    if (!description) return;
 
     const updatedJobs = [...openJobs];
-    const paint = { type, cost: parseFloat(cost) };
-    updatedJobs[jobIndex].paints = updatedJobs[jobIndex].paints || [];
-    updatedJobs[jobIndex].paints.push(paint);
-    updatedJobs[jobIndex].subtotal += parseFloat(cost);
-    saveJobs(updatedJobs);
+    const finalDescription =
+      description === "Other" ? customDescription : description;
+
+    updatedJobs[jobIndex].description = finalDescription;
+    saveJobs(updatedJobs); // Save updated jobs to storage or state
 
     // Reset input fields
-    setNewPaintType("");
-    setNewPaintCost("");
+    setNewDescription("");
+    setNewCustomDescription("");
   };
 
-  // Function to delete an item (expense, extra, paint)
+  // Function to delete an item (expense, extra, description)
   const deleteItem = (jobIndex, itemIndex, type) => {
     const updatedJobs = [...openJobs];
-    const itemAmount = updatedJobs[jobIndex][type][itemIndex].cost || updatedJobs[jobIndex][type][itemIndex].amount;
-    updatedJobs[jobIndex][type].splice(itemIndex, 1);
+    const itemAmount =
+      updatedJobs[jobIndex][type][itemIndex]?.cost ||
+      updatedJobs[jobIndex][type][itemIndex]?.amount ||
+      0;
+    if (itemIndex !== null) {
+      updatedJobs[jobIndex][type].splice(itemIndex, 1);
+    } else {
+      updatedJobs[jobIndex][type] = ""; // Clear the description
+    }
     updatedJobs[jobIndex].subtotal -= itemAmount;
     saveJobs(updatedJobs);
   };
 
-  // Function to update notes for rooms, extras, or paints
+  // Function to update notes for rooms, extras, or description
   const updateNote = (jobIndex, itemIndex, type, value) => {
     const updatedJobs = [...openJobs];
-    updatedJobs[jobIndex][type][itemIndex].note = value;
+    if (type === "customDescription") {
+      updatedJobs[jobIndex].customDescription = value; // Update custom description
+    } else {
+      updatedJobs[jobIndex][type][itemIndex].note = value;
+    }
     saveJobs(updatedJobs);
   };
 
@@ -137,10 +148,13 @@ const OpenJobs = () => {
       {/* Job List */}
       {openJobs.length > 0 ? (
         openJobs.map((job, jobIndex) => (
-          <div key={jobIndex} className="mb-6 p-4 bg-gray-100 rounded-lg shadow">
+          <div
+            key={jobIndex}
+            className="mb-6 p-4 bg-gray-100 rounded-lg shadow"
+          >
             {/* Job Summary */}
             <div className="flex justify-between mb-2 font-semibold text-gray-700">
-              <span>Job #{job.jobNumber}</span>
+              <span>Job #{job.estimateNumber}</span>
               <span>{job.customerName}</span>
               <span>{job.date}</span>
             </div>
@@ -156,12 +170,16 @@ const OpenJobs = () => {
               <h3 className="font-semibold">Room Notes</h3>
               {job.rooms.map((room, roomIndex) => (
                 <div key={roomIndex} className="mb-2">
-                  <p>{room.roomName} - {room.cost}</p>
+                  <p>
+                    {room.roomName} - {room.cost}
+                  </p>
                   <textarea
                     className="border p-2 w-full"
                     placeholder="Add note for this room"
                     value={room.note || ""}
-                    onChange={(e) => updateNote(jobIndex, roomIndex, "rooms", e.target.value)}
+                    onChange={(e) =>
+                      updateNote(jobIndex, roomIndex, "rooms", e.target.value)
+                    }
                   />
                 </div>
               ))}
@@ -173,115 +191,29 @@ const OpenJobs = () => {
                 <h3 className="font-semibold">Extra Notes</h3>
                 {job.extras.map((extra, extraIndex) => (
                   <div key={extraIndex} className="mb-2">
-                    <p>{extra.type} - ${extra.cost}</p>
+                    <p>
+                      {extra.type} - ${extra.cost}
+                    </p>
                     <textarea
                       className="border p-2 w-full"
                       placeholder="Add note for this extra"
                       value={extra.note || ""}
-                      onChange={(e) => updateNote(jobIndex, extraIndex, "extras", e.target.value)}
+                      onChange={(e) =>
+                        updateNote(jobIndex, extraIndex, "extras", e.target.value)
+                      }
                     />
-                    <button
-                      className="bg-pink text-white p-1 rounded mt-2"
-                      onClick={() => deleteItem(jobIndex, extraIndex, "extras")}
-                    >
-                      Delete Extra
-                    </button>
                   </div>
                 ))}
               </div>
             )}
-
-            {/* Paint Notes */}
-            {job.paints && job.paints.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-semibold">Paint Notes</h3>
-                {job.paints.map((paint, paintIndex) => (
-                  <div key={paintIndex} className="mb-2">
-                    <p>{paint.type} - ${paint.cost}</p>
-                    <textarea
-                      className="border p-2 w-full"
-                      placeholder="Add note for this paint"
-                      value={paint.note || ""}
-                      onChange={(e) => updateNote(jobIndex, paintIndex, "paints", e.target.value)}
-                    />
-                    <button
-                      className="bg-pink text-white p-1 rounded mt-2"
-                      onClick={() => deleteItem(jobIndex, paintIndex, "paints")}
-                    >
-                      Delete Paint
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Expense List */}
-            <div className="mb-4">
-              <h3 className="font-semibold">Expenses</h3>
-              {job.expenses && job.expenses.length > 0 ? (
-                job.expenses.map((expense, expenseIndex) => (
-                  <div key={expenseIndex} className="flex justify-between mb-2">
-                    <div>
-                      <span>{expense.description}</span>
-                      <span className="ml-4">${expense.amount.toFixed(2)}</span>
-                      {expense.receipt && (
-                        <img
-                          src={expense.receipt}
-                          alt="Receipt"
-                          className="w-20 h-20 object-cover mt-2"
-                        />
-                      )}
-                    </div>
-                    <button
-                      className="bg-pink text-white p-1 rounded"
-                      onClick={() => deleteItem(jobIndex, expenseIndex, "expenses")}
-                    >
-                      Delete Expense
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p>No expenses added yet.</p>
-              )}
-            </div>
-
-            {/* Add Expense */}
-            <div className="mb-4">
-              <input
-                type="text"
-                placeholder="Expense Description"
-                className="border p-2 w-full mb-2"
-                value={newExpenseDescription}
-                onChange={(e) => setNewExpenseDescription(e.target.value)}
-              />
-              <input
-                type="number"
-                placeholder="Expense Amount"
-                className="border p-2 w-full mb-2"
-                value={newExpenseAmount}
-                onChange={(e) => setNewExpenseAmount(e.target.value)}
-              />
-              <input
-                type="file"
-                accept="image/*"
-                className="border p-2 w-full mb-2"
-                onChange={handleReceiptUpload} // Handle receipt upload
-              />
-              <button
-                className="bg-blue text-white p-2 rounded"
-                onClick={() => addExpense(jobIndex, newExpenseDescription, newExpenseAmount)}
-              >
-                Add Expense
-              </button>
-            </div>
-
-           
 
             {/* Action Buttons */}
             <div className="flex space-x-4">
               <button
                 className="bg-blue text-white p-2 rounded"
-                onClick={() => navigate("/estimate-calculator", { state: { job, jobIndex } })}
+                onClick={() =>
+                  navigate("/estimate-calculator", { state: { job, jobIndex } })
+                }
               >
                 Edit Job
               </button>
