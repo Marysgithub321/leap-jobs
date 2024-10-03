@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getNextAvailableNumber } from "../utils"; // Assuming utils.js is directly in the src folder
+
 
 const EstimateCalculator = () => {
   const location = useLocation();
@@ -12,7 +14,9 @@ const EstimateCalculator = () => {
   const [customerName, setCustomerName] = useState(
     initialData.customerName || ""
   );
-  const [estimateNumber, setEstimateNumber] = useState(initialData.estimateNumber || "");
+  const [estimateNumber, setEstimateNumber] = useState(
+    initialData.estimateNumber || ""
+  );
   const [date, setDate] = useState(initialData.date || "");
   const [address, setAddress] = useState(initialData.address || "");
   const [phoneNumber, setPhoneNumber] = useState(initialData.phoneNumber || "");
@@ -21,7 +25,10 @@ const EstimateCalculator = () => {
   const [total, setTotal] = useState(initialData.total || 0);
   const [gstHst, setGstHst] = useState(initialData.gstHst || 0);
   const [editPrices, setEditPrices] = useState(false); // For price editing
-
+  const [description, setDescription] = useState(initialData.description || "");
+  const [customDescription, setCustomDescription] = useState(
+    initialData.customDescription || ""
+  );
   // Default cost options
   const defaultCostOptions = [
     { label: "8ft ceiling walls trim and doors", value: 350 },
@@ -102,22 +109,24 @@ const EstimateCalculator = () => {
     "Closet",
   ];
 
-  // Auto-generate the next estimate number if not editing
-  useEffect(() => {
-    if (!estimateNumber) {
-      const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
+ // Auto-generate the next estimate number if not editing
+useEffect(() => {
+  if (!estimateNumber) {
+    const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
+    const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
+    const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
+    const invoices = JSON.parse(localStorage.getItem("invoices")) || [];
 
-      const estimateNumbers = estimates.map((estimate) =>
-        parseInt(estimate.estimateNumber, 10)
-      );
+    // Generate the next available estimate number
+    const nextEstimateNumber = getNextAvailableNumber(
+      [...estimates, ...openJobs, ...closedJobs, ...invoices],
+      "estimateNumber"
+    );
 
-      const maxEstimateNumber =
-        estimateNumbers.length > 0 ? Math.max(...estimateNumbers) : 0;
-      const nextEstimateNumber = (maxEstimateNumber + 1).toString().padStart(2, "0");
+    setEstimateNumber(nextEstimateNumber); // Set the next available estimate number
+  }
+}, [estimateNumber]);
 
-      setEstimateNumber(nextEstimateNumber); // Set the next available estimate number
-    }
-  }, [estimateNumber]);
 
   // Calculate total when rooms, extras, or paints change
   const calculateTotal = useCallback(() => {
@@ -248,10 +257,6 @@ const EstimateCalculator = () => {
     navigate("/open-jobs"); // Redirect to the open jobs page
   };
 
-  // State for description
-  const [description, setDescription] = useState(""); // Track selected description
-  const [customDescription, setCustomDescription] = useState(""); // For custom description
-
   // Add description options
   const descriptionOptions = [
     "Includes all labor and paint",
@@ -294,7 +299,10 @@ const EstimateCalculator = () => {
             </div>
             <div className="flex items-center space-x-2">
               <div>
-                <label htmlFor="estimateNumber" className="block text-sm font-bold">
+                <label
+                  htmlFor="estimateNumber"
+                  className="block text-sm font-bold"
+                >
                   Estimate Number:
                 </label>
                 <input

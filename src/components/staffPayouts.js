@@ -1,31 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import jsPDF from 'jspdf';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 
 const StaffPayouts = () => {
   const [payments, setPayments] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
-    date: '',
-    name: '',
-    description: '',
-    amount: '',
+    date: "",
+    name: "",
+    description: "",
+    amount: "",
     gst: false,
   });
-  const [filterName, setFilterName] = useState('');
-  const [filterDate, setFilterDate] = useState(''); // Added date filter
+  const [filterName, setFilterName] = useState("");
+  const [filterDate, setFilterDate] = useState(""); // Added date filter
 
   const navigate = useNavigate();
 
   // Load payments from localStorage when the component mounts
   useEffect(() => {
-    const savedPayments = JSON.parse(localStorage.getItem('staffPayments')) || [];
+    const savedPayments =
+      JSON.parse(localStorage.getItem("staffPayments")) || [];
     setPayments(savedPayments);
   }, []);
 
   // Save payments to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('staffPayments', JSON.stringify(payments));
+    localStorage.setItem("staffPayments", JSON.stringify(payments));
   }, [payments]);
 
   // Handle form input changes
@@ -33,7 +34,7 @@ const StaffPayouts = () => {
     const { name, value, type, checked } = e.target;
     setPaymentForm((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -48,7 +49,13 @@ const StaffPayouts = () => {
     };
     setPayments([...payments, newPayment]);
     setShowForm(false); // Hide the form after adding the payment
-    setPaymentForm({ date: '', name: '', description: '', amount: '', gst: false }); // Reset form
+    setPaymentForm({
+      date: "",
+      name: "",
+      description: "",
+      amount: "",
+      gst: false,
+    }); // Reset form
   };
 
   // Edit payment
@@ -67,8 +74,12 @@ const StaffPayouts = () => {
 
   // Filter payments by name and date
   const filteredPayments = payments.filter((payment) => {
-    const matchesName = payment.name.toLowerCase().includes(filterName.toLowerCase());
-    const matchesDate = filterDate === '' || new Date(payment.date).getFullYear() === parseInt(filterDate);
+    const matchesName = payment.name
+      .toLowerCase()
+      .includes(filterName.toLowerCase());
+    const matchesDate =
+      filterDate === "" ||
+      new Date(payment.date).getFullYear() === parseInt(filterDate);
     return matchesName && matchesDate;
   });
 
@@ -76,14 +87,16 @@ const StaffPayouts = () => {
   const handlePrintPayouts = () => {
     const doc = new jsPDF();
     doc.setFontSize(10);
-    doc.text('Payouts Report', 10, 10);
+    doc.text("Payouts Report", 10, 10);
 
     filteredPayments.forEach((payment, index) => {
-      const line = `${payment.date} | ${payment.name} | ${payment.description} | $${payment.total.toFixed(2)} | ${payment.gst ? 'GST' : 'No GST'}`;
+      const line = `${payment.date} | ${payment.name} | ${
+        payment.description
+      } | $${payment.total.toFixed(2)} | ${payment.gst ? "GST" : "No GST"}`;
       doc.text(line, 10, 20 + index * 10);
     });
 
-    doc.save('staff_payouts.pdf');
+    doc.save("staff_payouts.pdf");
   };
 
   return (
@@ -97,23 +110,18 @@ const StaffPayouts = () => {
           {/* Home button */}
           <button
             className="bg-green text-white p-2 rounded"
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
           >
             Home
-          </button>
-          {/* Add Payment button */}
-          <button
-            className="bg-darkBlue text-white p-2 rounded"
-            onClick={() => setShowForm(!showForm)}
-          >
-            {showForm ? 'Cancel' : 'Add Payment'}
           </button>
         </div>
       </header>
 
       {/* Filter Section */}
       <div className="mb-4">
-        <label htmlFor="filterName" className="block font-bold mb-2">Filter by Name:</label>
+        <label htmlFor="filterName" className="block font-bold mb-2">
+          Filter by Name:
+        </label>
         <input
           type="text"
           id="filterName"
@@ -125,7 +133,9 @@ const StaffPayouts = () => {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="filterDate" className="block font-bold mb-2">Filter by Year:</label>
+        <label htmlFor="filterDate" className="block font-bold mb-2">
+          Filter by Year:
+        </label>
         <input
           type="number"
           id="filterDate"
@@ -138,17 +148,26 @@ const StaffPayouts = () => {
 
       {/* Print Button */}
       <button
-        className="bg-blue text-white p-2 rounded mb-4"
+        className="bg-blue text-white p-2 rounded mb-4 mr-4"
         onClick={handlePrintPayouts}
       >
-        Print Payouts
+        Print List
+      </button>
+      {/* Add Payment button */}
+      <button
+        className="bg-darkBlue text-white p-2 rounded mt-4 mb-4"
+        onClick={() => setShowForm(!showForm)}
+      >
+        {showForm ? "Cancel" : "Add Payment"}
       </button>
 
       {/* Payment Form */}
       {showForm && (
         <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow">
           <div className="mb-4">
-            <label htmlFor="date" className="block font-bold mb-2">Date</label>
+            <label htmlFor="date" className="block font-bold mb-2">
+              Date
+            </label>
             <input
               type="date"
               id="date"
@@ -159,7 +178,9 @@ const StaffPayouts = () => {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="name" className="block font-bold mb-2">Name</label>
+            <label htmlFor="name" className="block font-bold mb-2">
+              Name
+            </label>
             <input
               type="text"
               id="name"
@@ -170,7 +191,9 @@ const StaffPayouts = () => {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="description" className="block font-bold mb-2">Description</label>
+            <label htmlFor="description" className="block font-bold mb-2">
+              Description
+            </label>
             <input
               type="text"
               id="description"
@@ -181,7 +204,9 @@ const StaffPayouts = () => {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="amount" className="block font-bold mb-2">Amount</label>
+            <label htmlFor="amount" className="block font-bold mb-2">
+              Amount
+            </label>
             <input
               type="number"
               id="amount"

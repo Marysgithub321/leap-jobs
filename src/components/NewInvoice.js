@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { getNextAvailableNumber } from "../utils"; 
 
 const NewInvoice = () => {
   const navigate = useNavigate();
@@ -70,15 +71,21 @@ const NewInvoice = () => {
   const [description, setDescription] = useState(location.state?.job?.description || "");
   const [customDescription, setCustomDescription] = useState(location.state?.job?.customDescription || "");
 
-  // Auto-generate next invoice/estimate number
+  // Auto-generate the next invoice number if not editing
   useEffect(() => {
     if (!estimateNumber) {
+      const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
+      const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
+      const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
       const invoices = JSON.parse(localStorage.getItem("invoices")) || [];
-      const estimateNumbers = invoices.map(invoice => parseInt(invoice.estimateNumber, 10)).filter(Boolean);
-      const maxEstimateNumber = estimateNumbers.length > 0 ? Math.max(...estimateNumbers) : 0;
 
-      const nextEstimateNumber = (maxEstimateNumber + 1).toString().padStart(2, "0");
-      setEstimateNumber(nextEstimateNumber);
+      // Generate the next available invoice number
+      const nextInvoiceNumber = getNextAvailableNumber(
+        [...estimates, ...openJobs, ...closedJobs, ...invoices],
+        "estimateNumber"
+      );
+
+      setEstimateNumber(nextInvoiceNumber); // Set the next available invoice number
     }
   }, [estimateNumber]);
 
