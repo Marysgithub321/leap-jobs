@@ -1,290 +1,238 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
-import LeapLogoTeal from "../images/LeapLogoTeal.png"; // Adjust the path to your actual image location
+import LeapLogoTeal from "../images/LeapLogoTeal.png"; // Adjust the path as necessary
 
-const Estimates = () => {
-  const [estimates, setEstimates] = useState([]);
-  const navigate = useNavigate();
-
-  // Load saved estimates from localStorage
-  useEffect(() => {
-    const savedEstimates = JSON.parse(localStorage.getItem("estimates")) || [];
-    setEstimates(savedEstimates);
-  }, []);
-
-  // Function to delete an estimate
-  const deleteEstimate = (index) => {
-    const updatedEstimates = estimates.filter((_, i) => i !== index);
-    setEstimates(updatedEstimates);
-    localStorage.setItem("estimates", JSON.stringify(updatedEstimates));
-  };
-
-  // Function to format currency
-  const formatCurrency = (num) =>
-    "$" + num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
-
-  // PDF Generation Function
-  const generatePDF = (estimate) => {
-    const doc = new jsPDF();
-
-    // Load the logo image and wait for it to load before proceeding
-    const logoImage = new Image();
-    logoImage.src = LeapLogoTeal;
-
-    logoImage.onload = () => {
-      // Add the logo image at specified position
-      const imgProps = { x: 18, y: 10, width: 100, height: 60 };
-      doc.addImage(
-        logoImage,
-        "PNG",
-        imgProps.x,
-        imgProps.y,
-        imgProps.width,
-        imgProps.height
-      );
-
-      // Company Information Box
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      const companyInfo = [
-        "Helena Boldt",
-        "(519) 773-0070",
-        "51459 Lyons Line Springfield",
-        "ON N0L 2J0",
-        "lena.peters@live.ca",
-      ];
-      const companyInfoX = 47;
-      const companyInfoYStart = 75;
-      const companyLineHeight = 5;
-
-      companyInfo.forEach((line, idx) => {
-        doc.text(
-          line,
-          companyInfoX,
-          companyInfoYStart + idx * companyLineHeight
-        );
-      });
-      const boxWidth = 50;
-      const boxHeight = companyInfo.length * companyLineHeight + 3;
-      doc.rect(45, 70, boxWidth, boxHeight);
-
-      // Title (Estimate)
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text("Estimate", 170, 20, null, null, "center");
-
-      // Date and Estimate Number Box under the title
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Date: ${estimate.date || "N/A"}`, 157, 27);
-      doc.text(`Estimate # ${estimate.estimateNumber || "N/A"}`, 157, 35);
-
-      // Line between Date and Estimate Number
-      doc.line(155, 30, 195, 30);
-      // Box around Date and Estimate Number
-      doc.rect(155, 22, 40, 15);
-
-      // Customer Information
-      const customerInfoLabel = "Name / Address:";
-      const customerName = estimate.customerName || "N/A";
-      const phoneNumber = estimate.phoneNumber || "N/A";
-      const address = estimate.address || "N/A";
-      const addressLines = doc.splitTextToSize(address, 50);
-
-      doc.text(customerInfoLabel, 120, 75);
-      doc.line(118, 78, 195, 78);
-      doc.text(customerName, 120, 83);
-      let addressY = 88;
-      addressLines.forEach((line) => {
-        doc.text(line, 120, addressY);
-        addressY += 5;
-      });
-      doc.text(phoneNumber, 120, addressY + 0);
-
-      const customerBoxHeight = addressY - 70 + 5;
-      doc.rect(118, 70, 77, customerBoxHeight);
-
-      let gridY = 117; // Fixed starting Y position for the grid
-
-// Headers
-const headers = ["Items", "Description"];
-const headerX = [18, 43];
-doc.setFontSize(10);
-doc.setFont("helvetica");
-
-// Render Headers
-headers.forEach((header, i) => {
-  doc.text(header, headerX[i], gridY);
-});
-
-// Draw a box around the grid (Fixed Size)
-const gridBoxX = 15;
-const gridBoxY = 110; // Starting Y position for the grid box
-const gridBoxWidth = 180; // Fixed width
-const gridBoxHeight = 120; // Fixed height
-doc.rect(gridBoxX, gridBoxY, gridBoxWidth, gridBoxHeight); // Removed the -5 offset for alignment
-
-// Line below headers
-doc.line(15, gridY + 2, 195, gridY + 2);
-gridY += 10;
-
-// Add a vertical line inside the grid
-const verticalLineX = 40; // X position for the vertical line
-const verticalLineYStart = gridBoxY; // Start at the top of the grid
-const verticalLineYEnd = gridBoxY + gridBoxHeight; // End at the bottom of the grid
-doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd); // Draw the vertical line
-
-      // Render the grid data (Description)
-const finalDescription =
-estimate.description === "Other"
-  ? estimate.customDescription
-  : estimate.description;
-
-// Split the description into multiple lines with a maximum of 50 characters per line
-const maxLineWidth = 70; // Adjust this value based on how many characters per line you want
-const splitDescription = doc.splitTextToSize(finalDescription, maxLineWidth); // Split the description
-
-splitDescription.forEach((row, i) => {
-if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-  // Ensure text stays within the grid box
-  doc.text(row || "N/A", headerX[1], gridY);
-  gridY += 5; // Increase the Y position for each row
-}
-});
-
-      // Totals Box (Fixed Position 15 units below the grid)
-      const totalsBoxX = 150;
-      const totalsBoxY = gridBoxY + gridBoxHeight + 5; // 15 units below the grid box
-      const totalsBoxWidth = 45;
-      const totalsBoxHeight = 30;
-      const totalsLineHeight = 10;
-
-      // Draw the box for totals
-      doc.rect(totalsBoxX, totalsBoxY, totalsBoxWidth, totalsBoxHeight);
-
-      doc.setFont("helvetica", "bold");
-      doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
-      doc.text(
-        "GST/HST:",
-        totalsBoxX + 2,
-        totalsBoxY + totalsLineHeight * 2 - 2
-      );
-      doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
-
-      // Add lines between the subtotal, GST/HST, and total
-      doc.line(
-        totalsBoxX,
-        totalsBoxY + totalsLineHeight,
-        totalsBoxX + totalsBoxWidth,
-        totalsBoxY + totalsLineHeight
-      );
-      doc.line(
-        totalsBoxX,
-        totalsBoxY + totalsLineHeight * 2,
-        totalsBoxX + totalsBoxWidth,
-        totalsBoxY + totalsLineHeight * 2
-      );
-      doc.line(
-        totalsBoxX,
-        totalsBoxY + totalsLineHeight * 3,
-        totalsBoxX + totalsBoxWidth,
-        totalsBoxY + totalsLineHeight * 3
-      );
-
-      doc.setFont("helvetica", "normal");
-
-      const subtotal = parseFloat(estimate.subtotal || 0);
-      const taxAmount = subtotal * 0.13;
-      const totalValue = subtotal + taxAmount;
-
-      doc.text(
-        formatCurrency(subtotal),
-        totalsBoxX + totalsBoxWidth - 2,
-        totalsBoxY + totalsLineHeight - 2,
-        { align: "right" }
-      );
-      doc.text(
-        formatCurrency(taxAmount),
-        totalsBoxX + totalsBoxWidth - 2,
-        totalsBoxY + totalsLineHeight * 2 - 2,
-        { align: "right" }
-      );
-      doc.text(
-        formatCurrency(totalValue),
-        totalsBoxX + totalsBoxWidth - 2,
-        totalsBoxY + totalsLineHeight * 3 - 2,
-        { align: "right" }
-      );
-
-      // GST/HST Number (Positioned 15 units below the grid box, aligned to the left)
-      const gstNumberY = gridBoxY + gridBoxHeight + 15; // 15 units below the grid box
-      doc.setFont("helvetica", "normal");
-      doc.text("GST/HST NO.:", 15, gstNumberY); // Align to the left
-      doc.text("709401533R10001", 50, gstNumberY); // GST/HST number aligned next to the label
-
-      // Save the PDF with the customer's name
-      const customerNameSanitized = estimate.customerName
-        .replace(/[^a-z0-9]/gi, "_")
-        .toLowerCase();
-      doc.save(`Estimate_${customerNameSanitized}.pdf`);
-    };
-  };
-
-  return (
-    <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* Header with Home Button */}
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Estimates</h1>
-        <button
-          className="bg-green text-white p-2 rounded hover:bg-green-600"
-          onClick={() => navigate("/")}
-        >
-          Home
-        </button>
-      </header>
-
-      {/* Display saved estimates */}
-      {estimates.length > 0 ? (
-        estimates.map((estimate, index) => (
-          <div key={index} className="mb-4 p-4 bg-gray-100 rounded-lg shadow">
-            <p>{`Date: ${estimate.date} | Estimate Number: ${estimate.estimateNumber}`}</p>
-            <p>{`Customer Name: ${estimate.customerName || "N/A"}`}</p>
-            <p>{`Phone Number: ${estimate.phoneNumber || "N/A"}`}</p>
-            <p>{`Address: ${estimate.address || "N/A"}`}</p>
-            <p>{`Total: ${estimate.total || "N/A"}`}</p>
-
-            <div className="flex space-x-4">
-              <button
-                className="bg-darkBlue text-white p-2 mt-4 rounded"
-                onClick={() => generatePDF(estimate)}
-              >
-                Basic Estimate
-              </button>
-
-              <button
-                className="bg-blue text-white p-2 mt-4 rounded"
-                onClick={() =>
-                  navigate("/estimate-calculator", { state: { estimate } })
-                }
-              >
-                Edit
-              </button>
-
-              <button
-                className="bg-pink text-white p-2 mt-4 rounded"
-                onClick={() => deleteEstimate(index)}
-              >
-                Delete Estimate
-              </button>
-            </div>
-          </div>
-        ))
-      ) : (
-        <p>No estimates found.</p>
-      )}
-    </div>
-  );
+// Currency formatting function, same as used in the Basic Estimate
+const formatCurrency = (num) => {
+  const validNum = parseFloat(num) || 0; // Parse the number or fallback to 0 if invalid
+  return "$" + validNum.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
 };
 
-export default Estimates;
+export const generateDetailedPDF = (estimate) => {
+  const doc = new jsPDF();
+
+  const logoImage = new Image();
+  logoImage.src = LeapLogoTeal;
+
+  logoImage.onload = () => {
+    // Add the logo image and wait for it to load
+    const imgProps = { x: 18, y: 10, width: 100, height: 60 };
+    doc.addImage(logoImage, "PNG", imgProps.x, imgProps.y, imgProps.width, imgProps.height);
+
+    // Company Information Box
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    const companyInfo = [
+      "Helena Boldt",
+      "(519) 773-0070",
+      "51459 Lyons Line Springfield",
+      "ON N0L 2J0",
+      "lena.peters@live.ca",
+    ];
+    const companyInfoX = 47;
+    const companyInfoYStart = 75;
+    const companyLineHeight = 5;
+
+    companyInfo.forEach((line, idx) => {
+      doc.text(line, companyInfoX, companyInfoYStart + idx * companyLineHeight);
+    });
+
+    const boxWidth = 50;
+    const boxHeight = companyInfo.length * companyLineHeight + 3;
+    doc.rect(45, 70, boxWidth, boxHeight);
+
+    // Title (Estimate)
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text("Detailed Estimate", 172, 20, null, null, "center");
+
+    // Date and Estimate Number Box under the title
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Date: ${estimate.date || "N/A"}`, 157, 27);
+    doc.text(`Estimate # ${estimate.estimateNumber || "N/A"}`, 157, 35);
+    doc.line(155, 30, 195, 30); // Line between Date and Estimate Number
+    doc.rect(155, 22, 40, 15);  // Box around Date and Estimate Number
+
+    // Customer Information
+    const customerInfoLabel = "Name / Address:";
+    const customerName = estimate.customerName || "N/A";
+    const phoneNumber = estimate.phoneNumber || "N/A";
+    const address = estimate.address || "N/A";
+    const addressLines = doc.splitTextToSize(address, 70);
+
+    doc.text(customerInfoLabel, 120, 75);
+    doc.line(118, 78, 195, 78);
+    doc.text(customerName, 120, 83);
+    let addressY = 88;
+    addressLines.forEach((line) => {
+      doc.text(line, 120, addressY);
+      addressY += 5;
+    });
+    doc.text(phoneNumber, 120, addressY + 0);
+
+    const customerBoxHeight = addressY - 70 + 5;
+    doc.rect(118, 70, 77, customerBoxHeight);
+
+    // Render Grid Data (Items + Description + Total)
+    let gridY = 117; // Starting Y position for the grid
+    const gridBoxX = 15;
+    const gridBoxY = 110; // Starting Y position for the grid box
+    const gridBoxWidth = 180; // Fixed width for the grid
+    const gridBoxHeight = 120; // Fixed height for the grid
+
+    // Headers
+    const headers = ["Items", "Description", "Total"];
+    const headerX = [18, 43, 170]; // Positions for each header
+    doc.setFontSize(10);
+    doc.setFont("helvetica");
+
+    headers.forEach((header, i) => {
+      doc.text(header, headerX[i], gridY);
+    });
+
+    // Draw the grid box
+    doc.rect(gridBoxX, gridBoxY, gridBoxWidth, gridBoxHeight);
+
+    // Line below headers
+    doc.line(15, gridY + 2, 195, gridY + 2);
+    gridY += 10;
+
+    // Vertical lines inside the grid
+    const verticalLineX = 40; // Between "Items" and "Description"
+    const verticalLineXRight = 165; // Before "Total"
+    const verticalLineYStart = gridBoxY;
+    const verticalLineYEnd = gridBoxY + gridBoxHeight;
+    doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd);
+    doc.line(verticalLineXRight, verticalLineYStart, verticalLineXRight, verticalLineYEnd); // Before the Total column
+
+    // Detailed Estimate Data (Rooms and Extras)
+const rooms = estimate.rooms || []; // Array of rooms
+const extras = estimate.extras || []; // Array of extras
+
+const allItems = [...rooms, ...extras]; // Combine rooms and extras into one array
+
+allItems.forEach((item, i) => {
+  if (gridY + 5 <= gridBoxY + gridBoxHeight) {
+    // For rooms, set "Room" in the Items column, and for extras, set "Extra/Paint"
+    const itemType = item.roomName ? "Room" : "Extra/Paint";
+    doc.text(itemType, headerX[0], gridY); // Items column
+
+    // Handle the description (either room name or extra type)
+    let description = item.roomName
+      ? item.customRoomName || item.roomName // For rooms, show room name
+      : item.customType || item.type; // For extras, show custom type or selected type
+
+    // If it's an extra/paint and the user has selected "Other" and provided a custom type, split the custom type into lines
+    if (!item.roomName && item.type === "Other" && item.customType) {
+      const splitCustomType = doc.splitTextToSize(item.customType, 70); // Split custom type for "Other"
+      splitCustomType.forEach((line) => {
+        if (gridY + 5 <= gridBoxY + gridBoxHeight) {
+          doc.text(line || "N/A", headerX[1], gridY); // Render the custom type on multiple lines
+          gridY += 5; // Move down for each line
+        }
+      });
+    } else {
+      doc.text(description || "N/A", headerX[1], gridY); // Description column for non-custom or normal items
+    }
+
+    // Set the total price for the item
+    const itemCost = item.cost ? formatCurrency(item.cost) : formatCurrency(0);
+    doc.text(itemCost, headerX[2], gridY); // Total column
+
+    gridY += 5; // Move to the next row
+  }
+});
+
+// Render the description only once at the end of the grid
+const finalDescription =
+  estimate.description === "Other"
+    ? estimate.customDescription
+    : estimate.description;
+
+// Split the description into lines if necessary
+const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
+
+splitDescription.forEach((descRow) => {
+  if (gridY + 5 <= gridBoxY + gridBoxHeight) {
+    doc.text(descRow || "N/A", headerX[1], gridY); // Place in the description column
+    gridY += 5; // Move down for each row of the description
+  }
+});
+
+
+     // Totals Box (Fixed Position 15 units below the grid)
+     const totalsBoxX = 150;
+     const totalsBoxY = gridBoxY + gridBoxHeight + 5; // 15 units below the grid box
+     const totalsBoxWidth = 45;
+     const totalsBoxHeight = 30;
+     const totalsLineHeight = 10;
+
+     // Draw the box for totals
+     doc.rect(totalsBoxX, totalsBoxY, totalsBoxWidth, totalsBoxHeight);
+
+     doc.setFont("helvetica", "bold");
+     doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
+     doc.text(
+       "GST/HST:",
+       totalsBoxX + 2,
+       totalsBoxY + totalsLineHeight * 2 - 2
+     );
+     doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
+
+     // Add lines between the subtotal, GST/HST, and total
+     doc.line(
+       totalsBoxX,
+       totalsBoxY + totalsLineHeight,
+       totalsBoxX + totalsBoxWidth,
+       totalsBoxY + totalsLineHeight
+     );
+     doc.line(
+       totalsBoxX,
+       totalsBoxY + totalsLineHeight * 2,
+       totalsBoxX + totalsBoxWidth,
+       totalsBoxY + totalsLineHeight * 2
+     );
+     doc.line(
+       totalsBoxX,
+       totalsBoxY + totalsLineHeight * 3,
+       totalsBoxX + totalsBoxWidth,
+       totalsBoxY + totalsLineHeight * 3
+     );
+
+     doc.setFont("helvetica", "normal");
+
+     const subtotal = parseFloat(estimate.subtotal || 0);
+     const taxAmount = subtotal * 0.13;
+     const totalValue = subtotal + taxAmount;
+
+     doc.text(
+       formatCurrency(subtotal),
+       totalsBoxX + totalsBoxWidth - 2,
+       totalsBoxY + totalsLineHeight - 2,
+       { align: "right" }
+     );
+     doc.text(
+       formatCurrency(taxAmount),
+       totalsBoxX + totalsBoxWidth - 2,
+       totalsBoxY + totalsLineHeight * 2 - 2,
+       { align: "right" }
+     );
+     doc.text(
+       formatCurrency(totalValue),
+       totalsBoxX + totalsBoxWidth - 2,
+       totalsBoxY + totalsLineHeight * 3 - 2,
+       { align: "right" }
+     );
+    // GST/HST Number (Positioned 15 units below the grid box, aligned to the left)
+    const gstNumberY = gridBoxY + gridBoxHeight + 15; // 15 units below the grid box
+    doc.setFont("helvetica", "normal");
+    doc.text("GST/HST NO.:", 15, gstNumberY); // Align to the left
+    doc.text("709401533R10001", 50, gstNumberY); // GST/HST number aligned next to the label
+
+    // Save the PDF with the customer's name
+    const customerNameSanitized = estimate.customerName
+      .replace(/[^a-z0-9]/gi, "_")
+      .toLowerCase();
+    doc.save(`Detailed_Estimate_${customerNameSanitized}.pdf`);
+  };
+};

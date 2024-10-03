@@ -114,7 +114,7 @@ const allItems = [...rooms, ...extras]; // Combine rooms and extras into one arr
 allItems.forEach((item, i) => {
   if (gridY + 5 <= gridBoxY + gridBoxHeight) {
     // For rooms, set "Room" in the Items column, and for extras, set "Extra/Paint"
-    const itemType = item.roomName ? "Room" : "Extra/Paint";
+    const itemType = item.roomName === "Square Footage" ? "House" : item.roomName ? "Room" : "Extra/Paint";
     doc.text(itemType, headerX[0], gridY); // Items column
 
     // Handle the description (either room name or extra type)
@@ -122,107 +122,101 @@ allItems.forEach((item, i) => {
       ? item.customRoomName || item.roomName // For rooms, show room name
       : item.customType || item.type; // For extras, show custom type or selected type
 
-    // If it's an extra/paint and the user has selected "Other" and provided a custom type, split the custom type into lines
-    if (!item.roomName && item.type === "Other" && item.customType) {
-      const splitCustomType = doc.splitTextToSize(item.customType, 70); // Split custom type for "Other"
-      splitCustomType.forEach((line) => {
-        if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-          doc.text(line || "N/A", headerX[1], gridY); // Render the custom type on multiple lines
-          gridY += 5; // Move down for each line
-        }
-      });
-    } else {
-      doc.text(description || "N/A", headerX[1], gridY); // Description column for non-custom or normal items
-    }
+    doc.text(description || "N/A", headerX[1], gridY); // Description column
 
-    // Set the total price for the item
-    const itemCost = item.cost ? formatCurrency(item.cost) : formatCurrency(0);
-    doc.text(itemCost, headerX[2], gridY); // Total column
+    // If it's Square Footage, show the entered square footage in the total column
+    if (item.roomName === "Square Footage") {
+      const squareFootage = item.squareFootage || "N/A";
+      doc.text(squareFootage.toString(), headerX[2], gridY); // Display entered square footage
+    } else {
+      const itemCost = item.cost ? formatCurrency(item.cost) : formatCurrency(0);
+      doc.text(itemCost, headerX[2], gridY); // Total column for other rooms
+    }
 
     gridY += 5; // Move to the next row
   }
 });
 
-// Render the description only once at the end of the grid
-const finalDescription =
-  estimate.description === "Other"
-    ? estimate.customDescription
-    : estimate.description;
 
-// Split the description into lines if necessary
-const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
+    // Render the description only once at the end of the grid
+    const finalDescription =
+      estimate.description === "Other"
+        ? estimate.customDescription
+        : estimate.description;
 
-splitDescription.forEach((descRow) => {
-  if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-    doc.text(descRow || "N/A", headerX[1], gridY); // Place in the description column
-    gridY += 5; // Move down for each row of the description
-  }
-});
+    // Split the description into lines if necessary
+    const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
 
+    splitDescription.forEach((descRow) => {
+      if (gridY + 5 <= gridBoxY + gridBoxHeight) {
+        doc.text(descRow || "N/A", headerX[1], gridY); // Place in the description column
+        gridY += 5; // Move down for each row of the description
+      }
+    });
 
-     // Totals Box (Fixed Position 15 units below the grid)
-     const totalsBoxX = 150;
-     const totalsBoxY = gridBoxY + gridBoxHeight + 5; // 15 units below the grid box
-     const totalsBoxWidth = 45;
-     const totalsBoxHeight = 30;
-     const totalsLineHeight = 10;
+    // Totals Box (Fixed Position 15 units below the grid)
+    const totalsBoxX = 150;
+    const totalsBoxY = gridBoxY + gridBoxHeight + 5; // 15 units below the grid box
+    const totalsBoxWidth = 45;
+    const totalsBoxHeight = 30;
+    const totalsLineHeight = 10;
 
-     // Draw the box for totals
-     doc.rect(totalsBoxX, totalsBoxY, totalsBoxWidth, totalsBoxHeight);
+    // Draw the box for totals
+    doc.rect(totalsBoxX, totalsBoxY, totalsBoxWidth, totalsBoxHeight);
 
-     doc.setFont("helvetica", "bold");
-     doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
-     doc.text(
-       "GST/HST:",
-       totalsBoxX + 2,
-       totalsBoxY + totalsLineHeight * 2 - 2
-     );
-     doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
+    doc.setFont("helvetica", "bold");
+    doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
+    doc.text(
+      "GST/HST:",
+      totalsBoxX + 2,
+      totalsBoxY + totalsLineHeight * 2 - 2
+    );
+    doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
 
-     // Add lines between the subtotal, GST/HST, and total
-     doc.line(
-       totalsBoxX,
-       totalsBoxY + totalsLineHeight,
-       totalsBoxX + totalsBoxWidth,
-       totalsBoxY + totalsLineHeight
-     );
-     doc.line(
-       totalsBoxX,
-       totalsBoxY + totalsLineHeight * 2,
-       totalsBoxX + totalsBoxWidth,
-       totalsBoxY + totalsLineHeight * 2
-     );
-     doc.line(
-       totalsBoxX,
-       totalsBoxY + totalsLineHeight * 3,
-       totalsBoxX + totalsBoxWidth,
-       totalsBoxY + totalsLineHeight * 3
-     );
+    // Add lines between the subtotal, GST/HST, and total
+    doc.line(
+      totalsBoxX,
+      totalsBoxY + totalsLineHeight,
+      totalsBoxX + totalsBoxWidth,
+      totalsBoxY + totalsLineHeight
+    );
+    doc.line(
+      totalsBoxX,
+      totalsBoxY + totalsLineHeight * 2,
+      totalsBoxX + totalsBoxWidth,
+      totalsBoxY + totalsLineHeight * 2
+    );
+    doc.line(
+      totalsBoxX,
+      totalsBoxY + totalsLineHeight * 3,
+      totalsBoxX + totalsBoxWidth,
+      totalsBoxY + totalsLineHeight * 3
+    );
 
-     doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "normal");
 
-     const subtotal = parseFloat(estimate.subtotal || 0);
-     const taxAmount = subtotal * 0.13;
-     const totalValue = subtotal + taxAmount;
+    const subtotal = parseFloat(estimate.subtotal || 0);
+    const taxAmount = subtotal * 0.13;
+    const totalValue = subtotal + taxAmount;
 
-     doc.text(
-       formatCurrency(subtotal),
-       totalsBoxX + totalsBoxWidth - 2,
-       totalsBoxY + totalsLineHeight - 2,
-       { align: "right" }
-     );
-     doc.text(
-       formatCurrency(taxAmount),
-       totalsBoxX + totalsBoxWidth - 2,
-       totalsBoxY + totalsLineHeight * 2 - 2,
-       { align: "right" }
-     );
-     doc.text(
-       formatCurrency(totalValue),
-       totalsBoxX + totalsBoxWidth - 2,
-       totalsBoxY + totalsLineHeight * 3 - 2,
-       { align: "right" }
-     );
+    doc.text(
+      formatCurrency(subtotal),
+      totalsBoxX + totalsBoxWidth - 2,
+      totalsBoxY + totalsLineHeight - 2,
+      { align: "right" }
+    );
+    doc.text(
+      formatCurrency(taxAmount),
+      totalsBoxX + totalsBoxWidth - 2,
+      totalsBoxY + totalsLineHeight * 2 - 2,
+      { align: "right" }
+    );
+    doc.text(
+      formatCurrency(totalValue),
+      totalsBoxX + totalsBoxWidth - 2,
+      totalsBoxY + totalsLineHeight * 3 - 2,
+      { align: "right" }
+    );
     // GST/HST Number (Positioned 15 units below the grid box, aligned to the left)
     const gstNumberY = gridBoxY + gridBoxHeight + 15; // 15 units below the grid box
     doc.setFont("helvetica", "normal");

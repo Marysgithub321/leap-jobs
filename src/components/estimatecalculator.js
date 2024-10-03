@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { getNextAvailableNumber } from "../utils"; // Assuming utils.js is directly in the src folder
 
-
 const EstimateCalculator = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,6 +30,7 @@ const EstimateCalculator = () => {
   );
   // Default cost options
   const defaultCostOptions = [
+    { label: "Square Footage", value: 3.0 }, // Default price per square foot
     { label: "8ft ceiling walls trim and doors", value: 350 },
     { label: "9ft ceiling walls trim and doors", value: 400 },
     { label: "10ft ceiling walls trim and doors", value: 450 },
@@ -78,6 +78,7 @@ const EstimateCalculator = () => {
 
   const extraOptions = ["Paint", "Stain", "Primer", "Travel", "Other"];
   const roomOptions = [
+    "Square Footage",
     "Front Entry",
     "Living Room",
     "Kitchen",
@@ -109,31 +110,36 @@ const EstimateCalculator = () => {
     "Closet",
   ];
 
- // Auto-generate the next estimate number if not editing
-useEffect(() => {
-  if (!estimateNumber) {
-    const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
-    const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
-    const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
-    const invoices = JSON.parse(localStorage.getItem("invoices")) || [];
+  // Auto-generate the next estimate number if not editing
+  useEffect(() => {
+    if (!estimateNumber) {
+      const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
+      const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
+      const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
+      const invoices = JSON.parse(localStorage.getItem("invoices")) || [];
 
-    // Generate the next available estimate number
-    const nextEstimateNumber = getNextAvailableNumber(
-      [...estimates, ...openJobs, ...closedJobs, ...invoices],
-      "estimateNumber"
-    );
+      // Generate the next available estimate number
+      const nextEstimateNumber = getNextAvailableNumber(
+        [...estimates, ...openJobs, ...closedJobs, ...invoices],
+        "estimateNumber"
+      );
 
-    setEstimateNumber(nextEstimateNumber); // Set the next available estimate number
-  }
-}, [estimateNumber]);
-
+      setEstimateNumber(nextEstimateNumber); // Set the next available estimate number
+    }
+  }, [estimateNumber]);
 
   // Calculate total when rooms, extras, or paints change
   const calculateTotal = useCallback(() => {
-    const roomsTotal = rooms.reduce(
-      (acc, room) => acc + parseFloat(room.cost || 0),
-      0
-    );
+    const roomsTotal = rooms.reduce((acc, room) => {
+      if (room.roomName === "Square Footage") {
+        const squareFootagePrice =
+          costOptions.find((option) => option.label === "Square Footage")?.value || 0;
+        return acc + (room.squareFootage * squareFootagePrice || 0);
+      } else {
+        return acc + parseFloat(room.cost || 0);
+      }
+    }, 0);
+
     const extrasTotal = extras.reduce(
       (acc, extra) => acc + parseFloat(extra.cost || 0),
       0
@@ -142,7 +148,7 @@ useEffect(() => {
     const subtotal = roomsTotal + extrasTotal;
     setTotal(subtotal);
     setGstHst(subtotal * 0.13); // Assuming 13% GST/HST
-  }, [rooms, extras]);
+  }, [rooms, extras, costOptions]);
 
   // Automatically calculate total when inputs change
   useEffect(() => {
@@ -153,7 +159,7 @@ useEffect(() => {
   const addRoom = () =>
     setRooms([
       ...rooms,
-      { roomName: "", customRoomName: "", cost: 0, customCost: false },
+      { roomName: "", customRoomName: "", cost: 0, customCost: false, squareFootage: 0 }, // Include squareFootage property
     ]);
 
   // Add Extra Handler
@@ -467,8 +473,10 @@ useEffect(() => {
                     onChange={(e) => {
                       const value = e.target.value;
                       updateRoom(index, "roomName", value);
-                      if (value === "Extra Room") {
-                        updateRoom(index, "customRoomName", "");
+                      if (value === "Square Footage") {
+                        updateRoom(index, "squareFootage", 0); // Reset square footage
+                      } else {
+                        updateRoom(index, "cost", 0); // Reset cost for non-square footage rooms
                       }
                     }}
                   >
@@ -480,34 +488,38 @@ useEffect(() => {
                     ))}
                   </select>
 
-                  {/* Custom Room Name Input */}
-                  {room.roomName === "Extra Room" && (
-                    <input
-                      type="text"
-                      className="border p-2 mb-2 w-full"
-                      placeholder="Enter custom room name"
-                      value={room.customRoomName}
-                      onChange={(e) =>
-                        updateRoom(index, "customRoomName", e.target.value)
-                      }
-                    />
+                  {/* Square Footage Input */}
+                  {room.roomName === "Square Footage" && (
+                    <div>
+                      <label htmlFor="squareFootage">Enter Square Footage:</label>
+                      <input
+                        type="number"
+                        className="border p-2 mb-2 w-full"
+                        value={room.squareFootage}
+                        onChange={(e) =>
+                          updateRoom(index, "squareFootage", e.target.value)
+                        }
+                      />
+                    </div>
                   )}
 
-                  {/* Cost Input */}
-                  <select
-                    className="border p-2 mb-2 w-full"
-                    value={room.cost}
-                    onChange={(e) =>
-                      updateRoom(index, "cost", parseFloat(e.target.value))
-                    }
-                  >
-                    <option value="">Select Cost</option>
-                    {costOptions.map((option, i) => (
-                      <option key={i} value={option.value}>
-                        {option.label} - ${option.value}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Cost Input for Regular Rooms */}
+                  {room.roomName !== "Square Footage" && (
+                    <select
+                      className="border p-2 mb-2 w-full"
+                      value={room.cost}
+                      onChange={(e) =>
+                        updateRoom(index, "cost", parseFloat(e.target.value))
+                      }
+                    >
+                      <option value="">Select Cost</option>
+                      {costOptions.map((option, i) => (
+                        <option key={i} value={option.value}>
+                          {option.label} - ${option.value}
+                        </option>
+                      ))}
+                    </select>
+                  )}
 
                   <button
                     onClick={() => removeRoom(index)}
