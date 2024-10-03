@@ -99,7 +99,7 @@ export const generateDetailedPDF = (estimate) => {
 
     // Vertical lines inside the grid
     const verticalLineX = 40; // Between "Items" and "Description"
-    const verticalLineXRight = 165; // Before "Total"
+    const verticalLineXRight = 168; // Before "Total"
     const verticalLineYStart = gridBoxY;
     const verticalLineYEnd = gridBoxY + gridBoxHeight;
     doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd);

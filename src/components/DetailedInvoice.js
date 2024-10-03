@@ -1,9 +1,9 @@
 import { jsPDF } from "jspdf";
 import LeapLogoTeal from "../images/LeapLogoTeal.png"; // Adjust the path as necessary
 
-// Currency formatting function, same as used in the Basic Estimate
+// Currency formatting function
 const formatCurrency = (num) => {
-  const validNum = parseFloat(num) || 0; // Parse the number or fallback to 0 if invalid
+  const validNum = parseFloat(num) || 0;
   return "$" + validNum.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
 };
 
@@ -99,7 +99,7 @@ export const generateDetailedInvoicePDF = (invoice) => {
 
     // Vertical lines inside the grid
     const verticalLineX = 40; // Between "Items" and "Description"
-    const verticalLineXRight = 165; // Before "Total"
+    const verticalLineXRight = 168; // Before "Total"
     const verticalLineYStart = gridBoxY;
     const verticalLineYEnd = gridBoxY + gridBoxHeight;
     doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd);
@@ -113,8 +113,8 @@ export const generateDetailedInvoicePDF = (invoice) => {
 
     allItems.forEach((item, i) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-        // For rooms, set "Room" in the Items column, and for extras, set "Extra/Paint"
-        const itemType = item.roomName ? "Room" : "Extra/Paint";
+        // If it's Square Footage, show "House" instead of "Room" in Items column
+        const itemType = item.roomName === "Square Footage" ? "House" : item.roomName ? "Room" : "Extra/Paint";
         doc.text(itemType, headerX[0], gridY); // Items column
 
         // Handle the description (either room name or extra type)
@@ -135,9 +135,14 @@ export const generateDetailedInvoicePDF = (invoice) => {
           doc.text(description || "N/A", headerX[1], gridY); // Description column for non-custom or normal items
         }
 
-        // Set the total price for the item
-        const itemCost = item.cost ? formatCurrency(item.cost) : formatCurrency(0);
-        doc.text(itemCost, headerX[2], gridY); // Total column
+        // Set the total value (Square footage or price)
+        if (item.roomName === "Square Footage") {
+          const squareFootage = item.squareFootage || "N/A";
+          doc.text(squareFootage.toString(), headerX[2], gridY); // Display entered square footage in Total column
+        } else {
+          const itemCost = item.cost ? formatCurrency(item.cost) : formatCurrency(0);
+          doc.text(itemCost, headerX[2], gridY); // Total column for other rooms
+        }
 
         gridY += 5; // Move to the next row
       }

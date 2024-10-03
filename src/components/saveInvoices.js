@@ -33,7 +33,7 @@ const NewInvoice = () => {
   // State initialization
   const [costOptions, setCostOptions] = useState(() => {
     const savedCostOptions =
-      JSON.parse(localStorage.getItem("invoiceCostOptions")) || [];
+      JSON.parse(localStorage.getItem("costOptions")) || [];
     const mergedOptions = [...defaultCostOptions];
 
     // Merge saved options with default options
@@ -133,10 +133,7 @@ const NewInvoice = () => {
   const calculateTotal = useCallback(() => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
-        const sqftCost = costOptions.find(
-          (opt) => opt.label === "Square Footage"
-        )?.value || 0;
-        return acc + parseFloat(room.squareFootage || 0) * sqftCost; // Calculate by square footage
+        return acc + parseFloat(room.squareFootage || 0) * 3; // Calculate by square footage
       }
       return acc + parseFloat(room.cost || 0);
     }, 0);
@@ -148,7 +145,7 @@ const NewInvoice = () => {
     const subtotal = roomsTotal + extrasTotal;
     setTotal(subtotal);
     setGstHst(subtotal * 0.13); // 13% GST/HST
-  }, [rooms, extras, costOptions]);
+  }, [rooms, extras]);
 
   useEffect(() => {
     calculateTotal();
@@ -217,9 +214,8 @@ const NewInvoice = () => {
 
   // Save Prices
   const savePrices = () => {
-    localStorage.setItem("invoiceCostOptions", JSON.stringify(costOptions)); // Save prices under 'invoiceCostOptions'
+    localStorage.setItem("costOptions", JSON.stringify(costOptions));
     setEditPrices(false);
-    calculateTotal(); // Recalculate totals with updated prices
   };
 
   return (
@@ -499,9 +495,7 @@ const NewInvoice = () => {
                     className="border p-2 mb-2 w-full"
                     placeholder="Cost"
                     value={extra.cost}
-                    onChange={(e) =>
-                      updateExtra(index, "cost", e.target.value)
-                    }
+                    onChange={(e) => updateExtra(index, "cost", e.target.value)}
                   />
                   <button
                     onClick={() => removeExtra(index)}
