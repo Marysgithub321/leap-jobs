@@ -503,7 +503,7 @@ const EstimateCalculator = () => {
 
                   <button
                     onClick={() => removeRoom(index)}
-                    className="bg-blue text-white p-2 rounded hover:bg-darkGray w-full mt-2"
+                    className="bg-pink text-white p-2 rounded hover:bg-darkGray w-full mt-2"
                   >
                     Remove Room
                   </button>
@@ -564,7 +564,7 @@ const EstimateCalculator = () => {
 
                   <button
                     onClick={() => removeExtra(index)}
-                    className="bg-tealLight text-white p-2 rounded hover:bg-darkGray w-full mt-2"
+                    className="bg-pink text-white p-2 rounded hover:bg-darkGray w-full mt-2"
                   >
                     Remove Extra
                   </button>

@@ -103,7 +103,7 @@ const StaffPayouts = () => {
           </button>
           {/* Add Payment button */}
           <button
-            className="bg-tealLight text-white p-2 rounded"
+            className="bg-darkBlue text-white p-2 rounded"
             onClick={() => setShowForm(!showForm)}
           >
             {showForm ? 'Cancel' : 'Add Payment'}
@@ -138,7 +138,7 @@ const StaffPayouts = () => {
 
       {/* Print Button */}
       <button
-        className="bg-green text-white p-2 rounded mb-4"
+        className="bg-blue text-white p-2 rounded mb-4"
         onClick={handlePrintPayouts}
       >
         Print Payouts

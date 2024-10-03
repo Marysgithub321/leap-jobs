@@ -123,7 +123,7 @@ const PastJobs = () => {
                 Create Invoice
               </button>
               <button
-                className="bg-red-500 text-white p-2 rounded"
+                className="bg-pink text-white p-2 rounded"
                 onClick={() => handleDelete(jobIndex)}
               >
                 Delete

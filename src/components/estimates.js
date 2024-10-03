@@ -257,10 +257,10 @@ if (gridY + 5 <= gridBoxY + gridBoxHeight) {
 
             <div className="flex space-x-4">
               <button
-                className="bg-darkBlue text-white p-2 mt-4 rounded"
+                className="bg-tealLight text-white p-2 mt-4 rounded"
                 onClick={() => generatePDF(estimate)}
               >
-                Basic Estimate
+               Estimate
               </button>
 
                {/* Detailed Estimate Button */}
@@ -284,7 +284,7 @@ if (gridY + 5 <= gridBoxY + gridBoxHeight) {
                 className="bg-pink text-white p-2 mt-4 rounded"
                 onClick={() => deleteEstimate(index)}
               >
-                Delete Estimate
+                Delete 
               </button>
             </div>
           </div>

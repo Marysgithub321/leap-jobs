@@ -13,9 +13,9 @@ const Dashboard = () => {
   const cards = [
     { name: "Estimates", icon: "/icons/estimate.png", link: "/estimates" },
     { name: "Invoices", icon: "/icons/invoice.png", link: "/invoices" },
-    { name: "Receipts/Expenses", icon: "/icons/expenses.png", link: "/expenses" },
     { name: "New Estimate", icon: "/icons/calculator.png", link: "/estimate-calculator" },
     { name: "New Invoice", icon: "/icons/addjob.png", link: "/new-invoice" },
+    { name: "Receipts/Expenses", icon: "/icons/expenses.png", link: "/expenses" },
     { name: "Open Jobs", icon: "/icons/openjob.png", link: "/open-jobs" },
     { name: "Closed Jobs", icon: "/icons/pastjobs.png", link: "/past-jobs" },
     { name: "Contractor Payouts", icon: "/icons/payday.png", link: "/contractor-payouts" },

@@ -242,7 +242,7 @@ const NewInvoice = () => {
             <button className="bg-tealLight text-white p-2 rounded w-full sm:w-auto" onClick={addExtra}>
               Add Extra/Paint
             </button>
-            <button className="bg-darkBlue text-white p-2 rounded w-full sm:w-auto" onClick={toggleEditPrices}>
+            <button className="bg-blue text-white p-2 rounded w-full sm:w-auto" onClick={toggleEditPrices}>
               {editPrices ? "Close Edit Prices" : "Edit Prices"}
             </button>
           </div>
@@ -321,7 +321,7 @@ const NewInvoice = () => {
                   </select>
                   <button
                     onClick={() => removeRoom(index)}
-                    className="bg-blue text-white p-2 rounded hover:bg-darkGray w-full mt-2"
+                    className="bg-pink text-white p-2 rounded hover:bg-darkGray w-full mt-2"
                   >
                     Remove Room
                   </button>
