@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Leap App",
+  "name": "Leap Painting Job Tracker",
   "icons": [
     {
       "src": "favicon.ico",
@@ -8,12 +8,42 @@
       "type": "image/x-icon"
     },
     {
-      "src": "logo192.png",
+      "src": "icons/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "76x76"
+    },
+    {
+      "src": "icons/Logo120x120px.png",
+      "type": "image/png",
+      "sizes": "120x120"
+    },
+    {
+      "src": "icons/Logo144x144px.png",
+      "type": "image/png",
+      "sizes": "144x144"
+    },
+    {
+      "src": "icons/Logo152x152px.png",
+      "type": "image/png",
+      "sizes": "152x152"
+    },
+    {
+      "src": "icons/Logo167x167px.png",
+      "type": "image/png",
+      "sizes": "167x167"
+    },
+    {
+      "src": "icons/Logo180x180px.png",
+      "type": "image/png",
+      "sizes": "180x180"
+    },
+    {
+      "src": "icons/Logo192x192px.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "logo512.png",
+      "src": "icons/Logo512x512px.png",
       "type": "image/png",
       "sizes": "512x512"
     }
