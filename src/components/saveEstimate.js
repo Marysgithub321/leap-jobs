@@ -28,9 +28,10 @@ const EstimateCalculator = () => {
   const [customDescription, setCustomDescription] = useState(
     initialData.customDescription || ""
   );
+
   // Default cost options
   const defaultCostOptions = [
-    { label: "Square Footage", value: 3.0 }, 
+    { label: "Square Footage", value: 3.0 },
     { label: "8ft ceiling walls trim and doors", value: 350 },
     { label: "9ft ceiling walls trim and doors", value: 400 },
     { label: "10ft ceiling walls trim and doors", value: 450 },
@@ -42,7 +43,7 @@ const EstimateCalculator = () => {
     { label: "9ft walls", value: 275 },
     { label: "10ft walls", value: 325 },
     { label: "Just ceiling", value: 150 },
-    { label: "Just trim and doors", value: 150 }, 
+    { label: "Just trim and doors", value: 150 },
     { label: "Painting Stairs", value: 125 },
     { label: "Staining Stairs", value: 500 },
     { label: "Matching Stain to floor", value: 600 },
@@ -50,17 +51,15 @@ const EstimateCalculator = () => {
     { label: "Painting Railing", value: 450 },
     { label: "Staining Railing", value: 550 },
     { label: "Other", value: 50 },
-  
   ];
 
-  // Load cost options from localStorage, or use defaultCostOptions
+  // Load cost options from localStorage using a different key ("estimateCostOptions")
   const [costOptions, setCostOptions] = useState(() => {
     const savedCostOptions =
-      JSON.parse(localStorage.getItem("costOptions")) || [];
-    // Merge saved options with default options
+      JSON.parse(localStorage.getItem("estimateCostOptions")) || [];
     const mergedOptions = [...defaultCostOptions];
 
-    // Update values in mergedOptions based on localStorage, or add new options
+    // Merge saved options with default options
     savedCostOptions.forEach((savedOption) => {
       const index = mergedOptions.findIndex(
         (opt) => opt.label === savedOption.label
@@ -71,9 +70,6 @@ const EstimateCalculator = () => {
         mergedOptions.push(savedOption); // Add new options
       }
     });
-
-    // Save merged options back to localStorage
-    localStorage.setItem("costOptions", JSON.stringify(mergedOptions));
 
     return mergedOptions;
   });
@@ -135,7 +131,8 @@ const EstimateCalculator = () => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
         const squareFootagePrice =
-          costOptions.find((option) => option.label === "Square Footage")?.value || 0;
+          costOptions.find((option) => option.label === "Square Footage")
+            ?.value || 0;
         return acc + (room.squareFootage * squareFootagePrice || 0);
       } else {
         return acc + parseFloat(room.cost || 0);
@@ -192,8 +189,9 @@ const EstimateCalculator = () => {
 
   // Function to save the edited prices to localStorage
   const savePrices = () => {
-    localStorage.setItem("costOptions", JSON.stringify(costOptions));
+    localStorage.setItem("estimateCostOptions", JSON.stringify(costOptions));
     setEditPrices(false); // Close the edit section/modal
+    calculateTotal(); // Recalculate totals after price update
   };
 
   // Function to save the estimate to localStorage
@@ -493,7 +491,9 @@ const EstimateCalculator = () => {
                   {/* Square Footage Input */}
                   {room.roomName === "Square Footage" && (
                     <div>
-                      <label htmlFor="squareFootage">Enter Square Footage:</label>
+                      <label htmlFor="squareFootage">
+                        Enter Square Footage:
+                      </label>
                       <input
                         type="number"
                         className="border p-2 mb-2 w-full"

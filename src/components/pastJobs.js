@@ -81,23 +81,6 @@ const PastJobs = () => {
               </div>
             )}
 
-            {/* Display Description details */}
-            {job.description && (
-              <div className="mb-4">
-                <h3 className="font-semibold">Description</h3>
-                <ul>
-                  <li>
-                    {/* Display description and custom description if applicable */}
-                    {job.description === "Other" && job.customDescription
-                      ? `${job.customDescription} - Notes: ${
-                          job.notes || "No notes"
-                        }`
-                      : `${job.description}: Notes: ${job.notes || "No notes"}`}
-                  </li>
-                </ul>
-              </div>
-            )}
-
             {/* Totals */}
             <div className="section-bordered border-t mt-4 pt-4">
               <div className="flex justify-between">

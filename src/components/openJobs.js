@@ -5,15 +5,6 @@ const OpenJobs = () => {
   const navigate = useNavigate();
   const [openJobs, setOpenJobs] = useState([]);
 
-  // States for new entries
-  const [newExpenseDescription, setNewExpenseDescription] = useState("");
-  const [newExpenseAmount, setNewExpenseAmount] = useState("");
-  const [newExpenseReceipt, setNewExpenseReceipt] = useState(null); // State for uploaded receipt image
-  const [newExtraType, setNewExtraType] = useState("");
-  const [newExtraCost, setNewExtraCost] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newCustomDescription, setNewCustomDescription] = useState("");
-
   // Load open jobs from localStorage on component mount
   useEffect(() => {
     const savedOpenJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
@@ -27,114 +18,83 @@ const OpenJobs = () => {
   };
 
   // Function to delete a job
-  const deleteJob = (index) => {
-    const updatedJobs = openJobs.filter((_, i) => i !== index);
+  const deleteJob = (jobIndex) => {
+    const updatedJobs = openJobs.filter((_, i) => i !== jobIndex);
     saveJobs(updatedJobs);
   };
 
   // Function to move a job to closed jobs
-  const closeJob = (index) => {
+  const closeJob = (jobIndex) => {
     const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
-    closedJobs.push(openJobs[index]);
+    closedJobs.push(openJobs[jobIndex]);
     localStorage.setItem("closedJobs", JSON.stringify(closedJobs));
-    deleteJob(index);
+    deleteJob(jobIndex); // Call deleteJob to remove from open jobs after moving
   };
 
-  // Handle receipt image upload
-  const handleReceiptUpload = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setNewExpenseReceipt(reader.result); // Convert image to Base64 string
-    };
-    if (file) {
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Function to add or update an expense for a specific job
-  const addExpense = (jobIndex, description, amount) => {
-    if (!description || !amount) return;
-
+  // Function to update room progress (tracking selections)
+  const updateRoomProgress = (jobIndex, roomIndex, progressOption) => {
     const updatedJobs = [...openJobs];
-    const expense = {
-      description,
-      amount: parseFloat(amount),
-      receipt: newExpenseReceipt, // Store the uploaded receipt (Base64 string)
-    };
-    updatedJobs[jobIndex].expenses = updatedJobs[jobIndex].expenses || [];
-    updatedJobs[jobIndex].expenses.push(expense);
-    updatedJobs[jobIndex].subtotal += parseFloat(amount);
-    saveJobs(updatedJobs);
+    const room = updatedJobs[jobIndex].rooms[roomIndex];
 
-    // Reset input fields
-    setNewExpenseDescription("");
-    setNewExpenseAmount("");
-    setNewExpenseReceipt(null); // Reset receipt state
-  };
+    // Ensure room.progress is initialized as an array
+    room.progress = room.progress || [];
 
-  // Function to add an extra
-  const addExtra = (jobIndex, type, cost) => {
-    if (!type || !cost) return;
-
-    const updatedJobs = [...openJobs];
-    const extra = { type, cost: parseFloat(cost) };
-    updatedJobs[jobIndex].extras = updatedJobs[jobIndex].extras || [];
-    updatedJobs[jobIndex].extras.push(extra);
-    updatedJobs[jobIndex].subtotal += parseFloat(cost);
-    saveJobs(updatedJobs);
-
-    // Reset input fields
-    setNewExtraType("");
-    setNewExtraCost("");
-  };
-
-  // Function to add a description
-  const addDescription = (jobIndex, description, customDescription) => {
-    if (!description) return;
-
-    const updatedJobs = [...openJobs];
-    const finalDescription =
-      description === "Other" ? customDescription : description;
-
-    updatedJobs[jobIndex].description = finalDescription;
-    saveJobs(updatedJobs); // Save updated jobs to storage or state
-
-    // Reset input fields
-    setNewDescription("");
-    setNewCustomDescription("");
-  };
-
-  // Function to delete an item (expense, extra, description)
-  const deleteItem = (jobIndex, itemIndex, type) => {
-    const updatedJobs = [...openJobs];
-    const itemAmount =
-      updatedJobs[jobIndex][type][itemIndex]?.cost ||
-      updatedJobs[jobIndex][type][itemIndex]?.amount ||
-      0;
-    if (itemIndex !== null) {
-      updatedJobs[jobIndex][type].splice(itemIndex, 1);
+    // Toggle the selected progress option
+    if (room.progress.includes(progressOption)) {
+      room.progress = room.progress.filter((item) => item !== progressOption);
     } else {
-      updatedJobs[jobIndex][type] = ""; // Clear the description
+      room.progress.push(progressOption);
     }
-    updatedJobs[jobIndex].subtotal -= itemAmount;
+
     saveJobs(updatedJobs);
   };
 
-  // Function to update notes for rooms, extras, or description
-  const updateNote = (jobIndex, itemIndex, type, value) => {
+  // Function to update room notes
+  const updateRoomNote = (jobIndex, roomIndex, value) => {
     const updatedJobs = [...openJobs];
-    if (type === "customDescription") {
-      updatedJobs[jobIndex].customDescription = value; // Update custom description
-    } else {
-      updatedJobs[jobIndex][type][itemIndex].note = value;
-    }
+    updatedJobs[jobIndex].rooms[roomIndex].note = value;
     saveJobs(updatedJobs);
+  };
+
+  // Predefined progress options
+  const progressOptions = [
+    "1 coat primer on walls",
+    "1 coat primer on ceiling",
+    "1 coat of paint on ceiling",
+    "2 coats of paint on ceiling",
+    "1 coat cut in",
+    "2 coats cut in",
+    "1 coat paint on walls",
+    "2 coats paint on walls",
+    "3 coats paint on walls",
+    "1 coat paint on trim",
+    "2 coats paint on trim",
+    "1 coat paint on doors",
+    "2 coats paint on doors",
+    "1 sanding",
+    "2 sanding",
+    "3 sanding",
+    "1 coat of stain",
+    "2 coats of stain",
+    "1 clear coat",
+    "2 clear coats",
+    "3 clear coats",
+  ];
+
+  // State to track the visibility of the dropdowns
+  const [showProgressDropdown, setShowProgressDropdown] = useState(
+    openJobs.map(() => false)
+  );
+
+  // Toggle dropdown visibility
+  const toggleProgressDropdown = (jobIndex, roomIndex) => {
+    const updatedVisibility = [...showProgressDropdown];
+    updatedVisibility[jobIndex] = !updatedVisibility[jobIndex];
+    setShowProgressDropdown(updatedVisibility);
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* Header */}
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Open Jobs</h1>
         <button
@@ -152,7 +112,6 @@ const OpenJobs = () => {
             key={jobIndex}
             className="mb-6 p-4 bg-gray-100 rounded-lg shadow"
           >
-            {/* Job Summary */}
             <div className="flex justify-between mb-2 font-semibold text-gray-700">
               <span>Job #{job.estimateNumber}</span>
               <span>{job.customerName}</span>
@@ -165,47 +124,62 @@ const OpenJobs = () => {
               <p>Phone: {job.phoneNumber}</p>
             </div>
 
-            {/* Room Notes */}
+            {/* Room Notes and Progress */}
             <div className="mb-4">
-              <h3 className="font-semibold">Room Notes</h3>
+              <h3 className="font-semibold">Room Notes and Progress</h3>
               {job.rooms.map((room, roomIndex) => (
-                <div key={roomIndex} className="mb-2">
-                  <p>
-                    {room.roomName} - {room.cost}
-                  </p>
+                <div key={roomIndex} className="mb-4">
+                  <h4 className="font-bold mb-2">{room.roomName}</h4>
+
+                  {/* Dropdown Button for Progress */}
+                  <button
+                    className="bg-darkBlue text-white p-2 rounded mb-2"
+                    onClick={() => toggleProgressDropdown(jobIndex, roomIndex)}
+                  >
+                    {showProgressDropdown[jobIndex]
+                      ? "Hide Progress"
+                      : "Show Progress"}
+                  </button>
+
+                  {/* Progress Checklist (Visible if dropdown is open) */}
+                  {showProgressDropdown[jobIndex] && (
+                    <div className="mb-2">
+                      {progressOptions.map((option, optionIndex) => (
+                        <div
+                          key={optionIndex}
+                          className="flex items-center mb-1"
+                        >
+                          <input
+                            type="checkbox"
+                            id={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
+                            checked={room.progress?.includes(option)}
+                            onChange={() =>
+                              updateRoomProgress(jobIndex, roomIndex, option)
+                            }
+                          />
+                          <label
+                            htmlFor={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
+                            className="ml-2"
+                          >
+                            {option}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Room Note */}
                   <textarea
                     className="border p-2 w-full"
                     placeholder="Add note for this room"
                     value={room.note || ""}
                     onChange={(e) =>
-                      updateNote(jobIndex, roomIndex, "rooms", e.target.value)
+                      updateRoomNote(jobIndex, roomIndex, e.target.value)
                     }
                   />
                 </div>
               ))}
             </div>
-
-            {/* Extra Notes */}
-            {job.extras && job.extras.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-semibold">Extra Notes</h3>
-                {job.extras.map((extra, extraIndex) => (
-                  <div key={extraIndex} className="mb-2">
-                    <p>
-                      {extra.type} - ${extra.cost}
-                    </p>
-                    <textarea
-                      className="border p-2 w-full"
-                      placeholder="Add note for this extra"
-                      value={extra.note || ""}
-                      onChange={(e) =>
-                        updateNote(jobIndex, extraIndex, "extras", e.target.value)
-                      }
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Action Buttons */}
             <div className="flex space-x-4">
@@ -229,22 +203,6 @@ const OpenJobs = () => {
               >
                 Delete Job
               </button>
-            </div>
-
-            {/* Totals Section */}
-            <div className="section-bordered border-t mt-4 pt-4">
-              <div className="flex justify-between">
-                <p>Subtotal:</p>
-                <p>${job.subtotal.toFixed(2)}</p>
-              </div>
-              <div className="flex justify-between">
-                <p>GST/HST (13%):</p>
-                <p>${(job.subtotal * 0.13).toFixed(2)}</p>
-              </div>
-              <div className="flex justify-between font-bold">
-                <p>Total:</p>
-                <p>${(job.subtotal * 1.13).toFixed(2)}</p>
-              </div>
             </div>
           </div>
         ))

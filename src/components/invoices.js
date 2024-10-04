@@ -45,6 +45,7 @@ const Invoices = () => {
             <p>{`Customer Name: ${invoice.customerName || "N/A"}`}</p>
             <p>{`Phone Number: ${invoice.phoneNumber || "N/A"}`}</p>
             <p>{`Address: ${invoice.address || "N/A"}`}</p>
+            <p>{`Total: ${invoice.total || "N/A"}`}</p>
 
             {/* Room and Extra details */}
             {/* Same as before */}

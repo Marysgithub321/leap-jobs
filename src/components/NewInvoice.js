@@ -380,11 +380,12 @@ const NewInvoice = () => {
               onChange={(e) => setDescription(e.target.value)}
             >
               <option value="">Select Description</option>
-              <option value="Includes all labor and paint.">
-                Includes all labor and paint
+              <option value="Thank you for your business!">
+                Thank you for your business!
               </option>
-              <option value="Includes labor, paint is extra.">
-                Includes labor, paint is extra
+              
+              <option value="Payment due upon receipt.">
+                Payment due upon receipt.
               </option>
               <option value="Other">Other</option>
             </select>

@@ -6,16 +6,12 @@ const EstimateCalculator = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Extract both job and estimate data from location.state (whichever exists)
-  const initialData = location.state?.estimate || {};
+  // Extract job or estimate from location.state
+  const initialData = location.state?.job || location.state?.estimate || {};
 
-  // Initialize form state with estimate data
-  const [customerName, setCustomerName] = useState(
-    initialData.customerName || ""
-  );
-  const [estimateNumber, setEstimateNumber] = useState(
-    initialData.estimateNumber || ""
-  );
+  // Initialize form state with data from job or estimate
+  const [customerName, setCustomerName] = useState(initialData.customerName || "");
+  const [estimateNumber, setEstimateNumber] = useState(initialData.estimateNumber || "");
   const [date, setDate] = useState(initialData.date || "");
   const [address, setAddress] = useState(initialData.address || "");
   const [phoneNumber, setPhoneNumber] = useState(initialData.phoneNumber || "");
@@ -25,9 +21,7 @@ const EstimateCalculator = () => {
   const [gstHst, setGstHst] = useState(initialData.gstHst || 0);
   const [editPrices, setEditPrices] = useState(false); // For price editing
   const [description, setDescription] = useState(initialData.description || "");
-  const [customDescription, setCustomDescription] = useState(
-    initialData.customDescription || ""
-  );
+  const [customDescription, setCustomDescription] = useState(initialData.customDescription || "");
 
   // Default cost options
   const defaultCostOptions = [
@@ -131,8 +125,7 @@ const EstimateCalculator = () => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
         const squareFootagePrice =
-          costOptions.find((option) => option.label === "Square Footage")
-            ?.value || 0;
+          costOptions.find((option) => option.label === "Square Footage")?.value || 0;
         return acc + (room.squareFootage * squareFootagePrice || 0);
       } else {
         return acc + parseFloat(room.cost || 0);
