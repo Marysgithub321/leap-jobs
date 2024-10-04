@@ -10,8 +10,12 @@ const EstimateCalculator = () => {
   const initialData = location.state?.job || location.state?.estimate || {};
 
   // Initialize form state with data from job or estimate
-  const [customerName, setCustomerName] = useState(initialData.customerName || "");
-  const [estimateNumber, setEstimateNumber] = useState(initialData.estimateNumber || "");
+  const [customerName, setCustomerName] = useState(
+    initialData.customerName || ""
+  );
+  const [estimateNumber, setEstimateNumber] = useState(
+    initialData.estimateNumber || ""
+  );
   const [date, setDate] = useState(initialData.date || "");
   const [address, setAddress] = useState(initialData.address || "");
   const [phoneNumber, setPhoneNumber] = useState(initialData.phoneNumber || "");
@@ -21,7 +25,9 @@ const EstimateCalculator = () => {
   const [gstHst, setGstHst] = useState(initialData.gstHst || 0);
   const [editPrices, setEditPrices] = useState(false); // For price editing
   const [description, setDescription] = useState(initialData.description || "");
-  const [customDescription, setCustomDescription] = useState(initialData.customDescription || "");
+  const [customDescription, setCustomDescription] = useState(
+    initialData.customDescription || ""
+  );
 
   // Default cost options
   const defaultCostOptions = [
@@ -125,7 +131,8 @@ const EstimateCalculator = () => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
         const squareFootagePrice =
-          costOptions.find((option) => option.label === "Square Footage")?.value || 0;
+          costOptions.find((option) => option.label === "Square Footage")
+            ?.value || 0;
         return acc + (room.squareFootage * squareFootagePrice || 0);
       } else {
         return acc + parseFloat(room.cost || 0);
@@ -151,7 +158,13 @@ const EstimateCalculator = () => {
   const addRoom = () =>
     setRooms([
       ...rooms,
-      { roomName: "", customRoomName: "", cost: 0, customCost: false, squareFootage: 0 }, // Include squareFootage property
+      {
+        roomName: "",
+        customRoomName: "",
+        cost: 0,
+        customCost: false,
+        squareFootage: 0,
+      }, // Include squareFootage property
     ]);
 
   // Add Extra Handler
@@ -401,12 +414,15 @@ const EstimateCalculator = () => {
                     {option.label}:
                   </label>
                   <input
-                    type="number"
-                    value={option.value}
+                    type="text" // Use text to allow an empty value
+                    value={option.value === 0 ? "" : option.value} // Show empty if value is 0
                     onChange={(e) => {
-                      const newValue = parseFloat(e.target.value) || 0; // Ensure it's a valid number
+                      const newValue =
+                        e.target.value === "" ? "" : parseFloat(e.target.value); // Allow empty string
                       const updatedOptions = costOptions.map((item, i) =>
-                        i === index ? { ...item, value: newValue } : item
+                        i === index
+                          ? { ...item, value: isNaN(newValue) ? "" : newValue }
+                          : item
                       );
                       setCostOptions(updatedOptions); // Update state immutably
                     }}
@@ -414,6 +430,7 @@ const EstimateCalculator = () => {
                   />
                 </div>
               ))}
+
               <button
                 className="bg-pink text-white p-2 mt-4 rounded w-full"
                 onClick={savePrices}

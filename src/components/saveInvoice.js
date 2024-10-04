@@ -133,8 +133,9 @@ const NewInvoice = () => {
   const calculateTotal = useCallback(() => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
-        const sqftCost =
-          costOptions.find((opt) => opt.label === "Square Footage")?.value || 0;
+        const sqftCost = costOptions.find(
+          (opt) => opt.label === "Square Footage"
+        )?.value || 0;
         return acc + parseFloat(room.squareFootage || 0) * sqftCost; // Calculate by square footage
       }
       return acc + parseFloat(room.cost || 0);
@@ -350,22 +351,18 @@ const NewInvoice = () => {
                     {option.label}:
                   </label>
                   <input
-                    type="text"
-                    value={option.value === 0 ? "" : option.value} // Show empty if value is 0
+                    type="number"
+                    value={option.value}
                     onChange={(e) => {
                       const updatedPrices = [...costOptions];
-                      const newValue =
-                        e.target.value === "" ? "" : parseFloat(e.target.value); // Allow empty string
-                      updatedPrices[index].value = isNaN(newValue)
-                        ? ""
-                        : newValue;
+                      updatedPrices[index].value =
+                        parseFloat(e.target.value) || 0;
                       setCostOptions(updatedPrices);
                     }}
                     className="border rounded w-full p-2"
                   />
                 </div>
               ))}
-
               <button
                 className="bg-pink text-white p-2 mt-4 rounded w-full"
                 onClick={savePrices}
@@ -386,7 +383,7 @@ const NewInvoice = () => {
               <option value="Thank you for your business!">
                 Thank you for your business!
               </option>
-
+              
               <option value="Payment due upon receipt.">
                 Payment due upon receipt.
               </option>
@@ -503,7 +500,9 @@ const NewInvoice = () => {
                     className="border p-2 mb-2 w-full"
                     placeholder="Cost"
                     value={extra.cost}
-                    onChange={(e) => updateExtra(index, "cost", e.target.value)}
+                    onChange={(e) =>
+                      updateExtra(index, "cost", e.target.value)
+                    }
                   />
                   <button
                     onClick={() => removeExtra(index)}

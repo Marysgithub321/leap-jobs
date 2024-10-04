@@ -19,9 +19,21 @@ const PastJobs = () => {
     localStorage.setItem("closedJobs", JSON.stringify(updatedJobs));
   };
 
-  // Function to save the job as an invoice
+  // Function to save the job as an invoice (preventing duplicates)
   const saveAsInvoice = (job) => {
     const savedInvoices = JSON.parse(localStorage.getItem("invoices")) || [];
+
+    // Check if the invoice already exists (based on estimateNumber or another unique identifier)
+    const isInvoiceCreated = savedInvoices.some(
+      (invoice) => invoice.estimateNumber === job.estimateNumber
+    );
+
+    if (isInvoiceCreated) {
+      alert("An invoice for this job has already been created.");
+      return; // Stop if the invoice already exists
+    }
+
+    // Add the job as an invoice if it doesn't exist
     savedInvoices.push(job);
     localStorage.setItem("invoices", JSON.stringify(savedInvoices));
     alert("Invoice created successfully!");
@@ -60,12 +72,31 @@ const PastJobs = () => {
             <div className="mb-4">
               <h3 className="font-semibold">Rooms</h3>
               {job.rooms &&
-                job.rooms.map((room, roomIndex) => (
-                  <div key={roomIndex} className="mb-2">
-                    <p>Room: {room.roomName}</p>
-                    <p>Cost: ${room.cost}</p>
-                  </div>
-                ))}
+                job.rooms.map((room, roomIndex) => {
+                  const isSquareFootage = room.roomName === "Square Footage";
+                  const squareFootagePrice =
+                    job.costOptions?.find(
+                      (option) => option.label === "Square Footage"
+                    )?.value || 0; // Use the saved costOption for square footage
+
+                  const roomCost = isSquareFootage
+                    ? room.squareFootage * squareFootagePrice
+                    : room.cost;
+
+                  return (
+                    <div key={roomIndex} className="mb-2">
+                      <p>Room: {room.roomName}</p>
+                      {isSquareFootage ? (
+                        <>
+                          <p>Square Footage: {room.squareFootage} sq ft</p>
+                          <p>Cost: ${roomCost.toFixed(2)}</p>
+                        </>
+                      ) : (
+                        <p>Cost: ${roomCost.toFixed(2)}</p>
+                      )}
+                    </div>
+                  );
+                })}
             </div>
 
             {/* Display Extra details */}

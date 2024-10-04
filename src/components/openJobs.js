@@ -26,7 +26,19 @@ const OpenJobs = () => {
   // Function to move a job to closed jobs
   const closeJob = (jobIndex) => {
     const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
-    closedJobs.push(openJobs[jobIndex]);
+    const jobToClose = openJobs[jobIndex];
+
+    // Check if the job already exists in closedJobs
+    const isJobClosed = closedJobs.some(
+      (job) => job.estimateNumber === jobToClose.estimateNumber
+    );
+
+    if (isJobClosed) {
+      alert("This job is already closed and cannot be closed again.");
+      return;
+    }
+
+    closedJobs.push(jobToClose);
     localStorage.setItem("closedJobs", JSON.stringify(closedJobs));
     deleteJob(jobIndex); // Call deleteJob to remove from open jobs after moving
   };
