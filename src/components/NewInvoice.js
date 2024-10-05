@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getNextAvailableNumber } from "../utils";
+import { getNextAvailableNumber } from "../utils"; // Import the utility function
 
 const NewInvoice = () => {
   const navigate = useNavigate();
@@ -133,21 +133,22 @@ const NewInvoice = () => {
   const calculateTotal = useCallback(() => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
-        const sqftCost =
-          costOptions.find((opt) => opt.label === "Square Footage")?.value || 0;
-        return acc + parseFloat(room.squareFootage || 0) * sqftCost; // Calculate by square footage
+        // Use locked price per square foot if available
+        const sqftCost = room.lockedSquareFootPrice || 0;
+        return acc + parseFloat(room.squareFootage || 0) * sqftCost;
       }
-      return acc + parseFloat(room.cost || 0);
+      return acc + (room.lockedPrice ?? parseFloat(room.cost || 0)); // Use locked price or fallback to cost
     }, 0);
 
     const extrasTotal = extras.reduce(
-      (acc, extra) => acc + parseFloat(extra.cost || 0),
+      (acc, extra) => acc + (extra.lockedCost || parseFloat(extra.cost || 0)),
       0
     );
+
     const subtotal = roomsTotal + extrasTotal;
     setTotal(subtotal);
     setGstHst(subtotal * 0.13); // 13% GST/HST
-  }, [rooms, extras, costOptions]);
+  }, [rooms, extras]);
 
   useEffect(() => {
     calculateTotal();
@@ -187,15 +188,43 @@ const NewInvoice = () => {
 
   // Add Room
   const addRoom = () =>
-    setRooms([...rooms, { roomName: "", cost: 0, squareFootage: 0 }]); // Add squareFootage
+    setRooms([
+      ...rooms,
+      {
+        roomName: "",
+        cost: 0,
+        lockedPrice: null, // Initialize locked price for regular rooms
+        lockedSquareFootPrice: null, // Initialize locked price for square footage rooms
+        squareFootage: 0,
+      },
+    ]);
 
   // Add Extra
-  const addExtra = () => setExtras([...extras, { type: "", cost: 0 }]);
+  const addExtra = () =>
+    setExtras([...extras, { type: "", cost: 0, lockedCost: null }]);
 
   // Update Room
   const updateRoom = (index, field, value) => {
     const updatedRooms = [...rooms];
     updatedRooms[index][field] = value;
+
+    // Lock the price for square footage rooms when the roomName is "Square Footage"
+    if (field === "roomName" && value === "Square Footage") {
+      const sqftPrice =
+        costOptions.find((opt) => opt.label === "Square Footage")?.value || 0;
+      updatedRooms[index].lockedSquareFootPrice = sqftPrice; // Lock the price per sqft
+    }
+
+    // Lock the price when the cost is selected for regular rooms
+    if (field === "cost") {
+      const selectedCost = costOptions.find(
+        (option) => option.value === parseFloat(value)
+      );
+      if (selectedCost) {
+        updatedRooms[index].lockedPrice = selectedCost.value; // Lock the price
+      }
+    }
+
     setRooms(updatedRooms);
   };
 
@@ -203,6 +232,12 @@ const NewInvoice = () => {
   const updateExtra = (index, field, value) => {
     const updatedExtras = [...extras];
     updatedExtras[index][field] = value;
+
+    // Lock the cost if selected
+    if (field === "cost") {
+      updatedExtras[index].lockedCost = parseFloat(value); // Lock the cost
+    }
+
     setExtras(updatedExtras);
   };
 
@@ -320,6 +355,34 @@ const NewInvoice = () => {
             </section>
           </div>
 
+          {/* Description Section */}
+          <div className="mb-4">
+            <label className="block text-sm font-bold mb-2">Description:</label>
+            <select
+              className="border p-2 w-full mb-2"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            >
+              <option value="">Select Description</option>
+              <option value="Thank you for your business!">
+                Thank you for your business!
+              </option>
+              <option value="Payment due upon receipt.">
+                Payment due upon receipt.
+              </option>
+              <option value="Other">Other</option>
+            </select>
+            {description === "Other" && (
+              <input
+                type="text"
+                className="border p-2 mb-2 w-full"
+                placeholder="Enter custom description"
+                value={customDescription}
+                onChange={(e) => setCustomDescription(e.target.value)}
+              />
+            )}
+          </div>
+
           <div className="mb-4 flex flex-wrap gap-2">
             <button
               className="bg-darkBlue text-white p-2 rounded w-full sm:w-auto"
@@ -375,34 +438,6 @@ const NewInvoice = () => {
             </div>
           )}
 
-          <div className="mb-4">
-            <label className="block text-sm font-bold mb-2">Description:</label>
-            <select
-              className="border p-2 w-full mb-2"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            >
-              <option value="">Select Description</option>
-              <option value="Thank you for your business!">
-                Thank you for your business!
-              </option>
-
-              <option value="Payment due upon receipt.">
-                Payment due upon receipt.
-              </option>
-              <option value="Other">Other</option>
-            </select>
-            {description === "Other" && (
-              <input
-                type="text"
-                className="border p-2 mb-2 w-full"
-                placeholder="Enter custom description"
-                value={customDescription}
-                onChange={(e) => setCustomDescription(e.target.value)}
-              />
-            )}
-          </div>
-
           {rooms.length > 0 && (
             <>
               <h3 className="font-bold mb-2">Rooms</h3>
@@ -419,6 +454,7 @@ const NewInvoice = () => {
                       updateRoom(index, "roomName", value);
                       if (value === "Square Footage") {
                         updateRoom(index, "squareFootage", 0); // Reset square footage
+                        updateRoom(index, "cost", 3); // Set default cost per square foot
                       } else {
                         updateRoom(index, "cost", 0); // Reset cost for non-square footage rooms
                       }
@@ -432,31 +468,62 @@ const NewInvoice = () => {
                     ))}
                   </select>
 
-                  {/* Square Footage Input */}
+                  {/* Square Footage Input and Cost Input for Square Footage Rooms */}
                   {room.roomName === "Square Footage" && (
-                    <div>
-                      <label htmlFor="squareFootage">
-                        Enter Square Footage:
-                      </label>
-                      <input
-                        type="number"
-                        className="border p-2 mb-2 w-full"
-                        value={room.squareFootage}
-                        onChange={(e) =>
-                          updateRoom(index, "squareFootage", e.target.value)
-                        }
-                      />
-                    </div>
+                    <>
+                      <div>
+                        <label htmlFor="squareFootage">
+                          Enter Square Footage:
+                        </label>
+                        <input
+                          type="number"
+                          className="border p-2 mb-2 w-full"
+                          value={room.squareFootage}
+                          onChange={(e) =>
+                            updateRoom(index, "squareFootage", e.target.value)
+                          }
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="cost">
+                          Select Cost per Square Foot:
+                        </label>
+                        <select
+                          className="border p-2 mb-2 w-full"
+                          value={room.lockedSquareFootPrice || room.cost}
+                          onChange={(e) => {
+                            const selectedCost = parseFloat(e.target.value);
+                            updateRoom(index, "cost", selectedCost);
+                            updateRoom(
+                              index,
+                              "lockedSquareFootPrice",
+                              selectedCost
+                            ); // Update the locked cost when user selects a different cost
+                            calculateTotal(); // Recalculate totals
+                          }}
+                        >
+                          <option value="">Select Cost</option>
+                          {costOptions.map((option, i) => (
+                            <option key={i} value={option.value}>
+                              {option.label} - ${option.value} per sq. ft.
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </>
                   )}
 
-                  {/* Cost Input for Regular Rooms */}
+                  {/* Cost Input for Non-Square Footage Rooms */}
                   {room.roomName !== "Square Footage" && (
                     <select
                       className="border p-2 mb-2 w-full"
-                      value={room.cost}
-                      onChange={(e) =>
-                        updateRoom(index, "cost", parseFloat(e.target.value))
-                      }
+                      value={room.lockedPrice || room.cost}
+                      onChange={(e) => {
+                        const selectedCost = parseFloat(e.target.value);
+                        updateRoom(index, "cost", selectedCost);
+                        updateRoom(index, "lockedPrice", selectedCost); // Update the locked price when user selects a different cost
+                        calculateTotal(); // Recalculate totals
+                      }}
                     >
                       <option value="">Select Cost</option>
                       {costOptions.map((option, i) => (

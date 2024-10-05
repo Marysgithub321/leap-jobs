@@ -133,22 +133,22 @@ const NewInvoice = () => {
   const calculateTotal = useCallback(() => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
-        const sqftCost = costOptions.find(
-          (opt) => opt.label === "Square Footage"
-        )?.value || 0;
-        return acc + parseFloat(room.squareFootage || 0) * sqftCost; // Calculate by square footage
+        // Use locked price per square foot if available
+        const sqftCost = room.lockedSquareFootPrice || 0;
+        return acc + parseFloat(room.squareFootage || 0) * sqftCost;
       }
-      return acc + parseFloat(room.cost || 0);
+      return acc + (room.lockedPrice ?? parseFloat(room.cost || 0)); // Use locked price or fallback to cost
     }, 0);
 
     const extrasTotal = extras.reduce(
-      (acc, extra) => acc + parseFloat(extra.cost || 0),
+      (acc, extra) => acc + (extra.lockedCost || parseFloat(extra.cost || 0)),
       0
     );
+
     const subtotal = roomsTotal + extrasTotal;
     setTotal(subtotal);
     setGstHst(subtotal * 0.13); // 13% GST/HST
-  }, [rooms, extras, costOptions]);
+  }, [rooms, extras]);
 
   useEffect(() => {
     calculateTotal();
@@ -188,15 +188,44 @@ const NewInvoice = () => {
 
   // Add Room
   const addRoom = () =>
-    setRooms([...rooms, { roomName: "", cost: 0, squareFootage: 0 }]); // Add squareFootage
+    setRooms([
+      ...rooms,
+      {
+        roomName: "",
+        cost: 0,
+        lockedPrice: null, // Initialize locked price for regular rooms
+        lockedSquareFootPrice: null, // Initialize locked price for square footage rooms
+        squareFootage: 0,
+      },
+    ]);
 
   // Add Extra
-  const addExtra = () => setExtras([...extras, { type: "", cost: 0 }]);
+  const addExtra = () =>
+    setExtras([...extras, { type: "", cost: 0, lockedCost: null }]);
 
   // Update Room
   const updateRoom = (index, field, value) => {
     const updatedRooms = [...rooms];
     updatedRooms[index][field] = value;
+
+    // Lock the price for square footage rooms when the roomName is "Square Footage"
+    if (field === "roomName" && value === "Square Footage") {
+      const sqftPrice = costOptions.find(
+        (opt) => opt.label === "Square Footage"
+      )?.value || 0;
+      updatedRooms[index].lockedSquareFootPrice = sqftPrice; // Lock the price per sqft
+    }
+
+    // Lock the price when the cost is selected for regular rooms
+    if (field === "cost") {
+      const selectedCost = costOptions.find(
+        (option) => option.value === parseFloat(value)
+      );
+      if (selectedCost) {
+        updatedRooms[index].lockedPrice = selectedCost.value; // Lock the price
+      }
+    }
+
     setRooms(updatedRooms);
   };
 
@@ -204,6 +233,12 @@ const NewInvoice = () => {
   const updateExtra = (index, field, value) => {
     const updatedExtras = [...extras];
     updatedExtras[index][field] = value;
+
+    // Lock the cost if selected
+    if (field === "cost") {
+      updatedExtras[index].lockedCost = parseFloat(value); // Lock the cost
+    }
+
     setExtras(updatedExtras);
   };
 
@@ -321,6 +356,34 @@ const NewInvoice = () => {
             </section>
           </div>
 
+          {/* Description Section */}
+          <div className="mb-4">
+            <label className="block text-sm font-bold mb-2">Description:</label>
+            <select
+              className="border p-2 w-full mb-2"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            >
+              <option value="">Select Description</option>
+              <option value="Thank you for your business!">
+                Thank you for your business!
+              </option>
+              <option value="Payment due upon receipt.">
+                Payment due upon receipt.
+              </option>
+              <option value="Other">Other</option>
+            </select>
+            {description === "Other" && (
+              <input
+                type="text"
+                className="border p-2 mb-2 w-full"
+                placeholder="Enter custom description"
+                value={customDescription}
+                onChange={(e) => setCustomDescription(e.target.value)}
+              />
+            )}
+          </div>
+
           <div className="mb-4 flex flex-wrap gap-2">
             <button
               className="bg-darkBlue text-white p-2 rounded w-full sm:w-auto"
@@ -351,18 +414,22 @@ const NewInvoice = () => {
                     {option.label}:
                   </label>
                   <input
-                    type="number"
-                    value={option.value}
+                    type="text"
+                    value={option.value === 0 ? "" : option.value} // Show empty if value is 0
                     onChange={(e) => {
                       const updatedPrices = [...costOptions];
-                      updatedPrices[index].value =
-                        parseFloat(e.target.value) || 0;
+                      const newValue =
+                        e.target.value === "" ? "" : parseFloat(e.target.value); // Allow empty string
+                      updatedPrices[index].value = isNaN(newValue)
+                        ? ""
+                        : newValue;
                       setCostOptions(updatedPrices);
                     }}
                     className="border rounded w-full p-2"
                   />
                 </div>
               ))}
+
               <button
                 className="bg-pink text-white p-2 mt-4 rounded w-full"
                 onClick={savePrices}
@@ -371,34 +438,6 @@ const NewInvoice = () => {
               </button>
             </div>
           )}
-
-          <div className="mb-4">
-            <label className="block text-sm font-bold mb-2">Description:</label>
-            <select
-              className="border p-2 w-full mb-2"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            >
-              <option value="">Select Description</option>
-              <option value="Thank you for your business!">
-                Thank you for your business!
-              </option>
-              
-              <option value="Payment due upon receipt.">
-                Payment due upon receipt.
-              </option>
-              <option value="Other">Other</option>
-            </select>
-            {description === "Other" && (
-              <input
-                type="text"
-                className="border p-2 mb-2 w-full"
-                placeholder="Enter custom description"
-                value={customDescription}
-                onChange={(e) => setCustomDescription(e.target.value)}
-              />
-            )}
-          </div>
 
           {rooms.length > 0 && (
             <>

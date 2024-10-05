@@ -4,11 +4,17 @@ import { useNavigate } from "react-router-dom";
 const OpenJobs = () => {
   const navigate = useNavigate();
   const [openJobs, setOpenJobs] = useState([]);
+  const [showJobDetails, setShowJobDetails] = useState([]);
+  const [showProgressDropdown, setShowProgressDropdown] = useState([]);
 
   // Load open jobs from localStorage on component mount
   useEffect(() => {
     const savedOpenJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
     setOpenJobs(savedOpenJobs);
+    
+    // Initialize showJobDetails and showProgressDropdown after loading jobs
+    setShowJobDetails(savedOpenJobs.map(() => false));
+    setShowProgressDropdown(savedOpenJobs.map((job) => job.rooms.map(() => false)));
   }, []);
 
   // Save jobs to localStorage
@@ -93,16 +99,19 @@ const OpenJobs = () => {
     "3 clear coats",
   ];
 
-  // State to track the visibility of the dropdowns
-  const [showProgressDropdown, setShowProgressDropdown] = useState(
-    openJobs.map(() => false)
-  );
-
-  // Toggle dropdown visibility
-  const toggleProgressDropdown = (jobIndex, roomIndex) => {
-    const updatedVisibility = [...showProgressDropdown];
+  // Toggle job details visibility
+  const toggleJobDetails = (jobIndex) => {
+    const updatedVisibility = [...showJobDetails];
     updatedVisibility[jobIndex] = !updatedVisibility[jobIndex];
-    setShowProgressDropdown(updatedVisibility);
+    setShowJobDetails(updatedVisibility);
+  };
+
+  // Toggle dropdown visibility per room
+  const toggleProgressDropdown = (jobIndex, roomIndex) => {
+    const updatedDropdownVisibility = [...showProgressDropdown];
+    updatedDropdownVisibility[jobIndex][roomIndex] =
+      !updatedDropdownVisibility[jobIndex][roomIndex];
+    setShowProgressDropdown(updatedDropdownVisibility);
   };
 
   return (
@@ -124,98 +133,115 @@ const OpenJobs = () => {
             key={jobIndex}
             className="mb-6 p-4 bg-gray-100 rounded-lg shadow"
           >
-            <div className="flex justify-between mb-2 font-semibold text-gray-700">
+            {/* Job Header with Open/Hide Job Button */}
+            <div className="flex justify-between items-center font-semibold text-gray-700">
               <span>Job #{job.estimateNumber}</span>
               <span>{job.customerName}</span>
-              <span>{job.date}</span>
+              <button
+                className="bg-darkBlue text-white p-2 rounded"
+                onClick={() => toggleJobDetails(jobIndex)}
+              >
+                {showJobDetails[jobIndex] ? "Hide Job" : "Open Job"}
+              </button>
             </div>
 
-            {/* Job Details */}
-            <div className="mb-4">
-              <p>Address: {job.address}</p>
-              <p>Phone: {job.phoneNumber}</p>
-            </div>
-
-            {/* Room Notes and Progress */}
-            <div className="mb-4">
-              <h3 className="font-semibold">Room Notes and Progress</h3>
-              {job.rooms.map((room, roomIndex) => (
-                <div key={roomIndex} className="mb-4">
-                  <h4 className="font-bold mb-2">{room.roomName}</h4>
-
-                  {/* Dropdown Button for Progress */}
-                  <button
-                    className="bg-darkBlue text-white p-2 rounded mb-2"
-                    onClick={() => toggleProgressDropdown(jobIndex, roomIndex)}
-                  >
-                    {showProgressDropdown[jobIndex]
-                      ? "Hide Progress"
-                      : "Show Progress"}
-                  </button>
-
-                  {/* Progress Checklist (Visible if dropdown is open) */}
-                  {showProgressDropdown[jobIndex] && (
-                    <div className="mb-2">
-                      {progressOptions.map((option, optionIndex) => (
-                        <div
-                          key={optionIndex}
-                          className="flex items-center mb-1"
-                        >
-                          <input
-                            type="checkbox"
-                            id={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
-                            checked={room.progress?.includes(option)}
-                            onChange={() =>
-                              updateRoomProgress(jobIndex, roomIndex, option)
-                            }
-                          />
-                          <label
-                            htmlFor={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
-                            className="ml-2"
-                          >
-                            {option}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Room Note */}
-                  <textarea
-                    className="border p-2 w-full"
-                    placeholder="Add note for this room"
-                    value={room.note || ""}
-                    onChange={(e) =>
-                      updateRoomNote(jobIndex, roomIndex, e.target.value)
-                    }
-                  />
+            {/* Job Details (Visible only if showJobDetails is true) */}
+            {showJobDetails[jobIndex] && (
+              <div>
+                {/* Job Details */}
+                <div className="mb-4 mt-4">
+                  <p>Address: {job.address}</p>
+                  <p>Phone: {job.phoneNumber}</p>
                 </div>
-              ))}
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex space-x-4">
-              <button
-                className="bg-blue text-white p-2 rounded"
-                onClick={() =>
-                  navigate("/estimate-calculator", { state: { job, jobIndex } })
-                }
-              >
-                Edit Job
-              </button>
-              <button
-                className="bg-tealLight text-white p-2 rounded"
-                onClick={() => closeJob(jobIndex)}
-              >
-                Close Job
-              </button>
-              <button
-                className="bg-pink text-white p-2 rounded"
-                onClick={() => deleteJob(jobIndex)}
-              >
-                Delete Job
-              </button>
-            </div>
+                {/* Room Notes and Progress */}
+                <div className="mb-4">
+                  <h3 className="font-semibold">Room Notes and Progress</h3>
+                  {job.rooms.map((room, roomIndex) => (
+                    <div key={roomIndex} className="mb-4">
+                      <h4 className="font-bold mb-2">{room.roomName}</h4>
+
+                      {/* Dropdown Button for Progress */}
+                      <button
+                        className="bg-darkBlue text-white p-2 rounded mb-2"
+                        onClick={() => toggleProgressDropdown(jobIndex, roomIndex)}
+                      >
+                        {showProgressDropdown[jobIndex][roomIndex]
+                          ? "Hide Progress"
+                          : "Show Progress"}
+                      </button>
+
+                      {/* Progress Checklist (Visible if dropdown is open) */}
+                      {showProgressDropdown[jobIndex][roomIndex] && (
+                        <div className="mb-2">
+                          {progressOptions.map((option, optionIndex) => (
+                            <div
+                              key={optionIndex}
+                              className="flex items-center mb-1"
+                            >
+                              <input
+                                type="checkbox"
+                                id={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
+                                checked={room.progress?.includes(option)}
+                                onChange={() =>
+                                  updateRoomProgress(
+                                    jobIndex,
+                                    roomIndex,
+                                    option
+                                  )
+                                }
+                              />
+                              <label
+                                htmlFor={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
+                                className="ml-2"
+                              >
+                                {option}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Room Note */}
+                      <textarea
+                        className="border p-2 w-full"
+                        placeholder="Add note for this room"
+                        value={room.note || ""}
+                        onChange={(e) =>
+                          updateRoomNote(jobIndex, roomIndex, e.target.value)
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-4">
+                  <button
+                    className="bg-blue text-white p-2 rounded"
+                    onClick={() =>
+                      navigate("/estimate-calculator", {
+                        state: { job, jobIndex },
+                      })
+                    }
+                  >
+                    Edit Job
+                  </button>
+                  <button
+                    className="bg-tealLight text-white p-2 rounded"
+                    onClick={() => closeJob(jobIndex)}
+                  >
+                    Close Job
+                  </button>
+                  <button
+                    className="bg-pink text-white p-2 rounded"
+                    onClick={() => deleteJob(jobIndex)}
+                  >
+                    Delete Job
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))
       ) : (

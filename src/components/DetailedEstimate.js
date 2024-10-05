@@ -144,15 +144,20 @@ allItems.forEach((item, i) => {
         ? estimate.customDescription
         : estimate.description;
 
+        gridY += 5; 
     // Split the description into lines if necessary
     const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
 
-    splitDescription.forEach((descRow) => {
+    splitDescription.forEach((row, i) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-        doc.text(descRow || "N/A", headerX[1], gridY); // Place in the description column
-        gridY += 5; // Move down for each row of the description
+        // Ensure text stays within the grid box
+        if (row) {
+          doc.text(row, headerX[1], gridY); // Render the row if it's not null/undefined
+        }
+        gridY += 5; // Increase the Y position for each row
       }
     });
+    
 
     // Totals Box (Fixed Position 15 units below the grid)
     const totalsBoxX = 150;

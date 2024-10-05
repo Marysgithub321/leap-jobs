@@ -1,179 +1,259 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import jsPDF from "jspdf";
 
 const Expenses = () => {
   const navigate = useNavigate();
   const [expenses, setExpenses] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [newExpense, setNewExpense] = useState({
+    jobNumber: "",
+    description: "",
+    amount: "",
+    receipt: null,
+  });
+  const [filterJobNumber, setFilterJobNumber] = useState(""); // Only filter by job number
 
-  // Form state for adding direct expense
-  const [newExpenseDescription, setNewExpenseDescription] = useState("");
-  const [newExpenseAmount, setNewExpenseAmount] = useState("");
-  const [newExpenseReceipt, setNewExpenseReceipt] = useState(null); // State for uploaded receipt image
-  const [newJobNumber, setNewJobNumber] = useState(""); // New field for Job Number
-
-  // Load all expenses from open jobs and direct expenses on mount
+  // Load all expenses from localStorage on mount
   useEffect(() => {
-    const openJobs = JSON.parse(localStorage.getItem('openJobs')) || [];
-    const allExpenses = openJobs.reduce((acc, job) => {
-      if (job.expenses && job.expenses.length > 0) {
-        job.expenses.forEach((expense) => {
-          acc.push({ ...expense, jobNumber: job.jobNumber, customerName: job.customerName, source: 'openJobs' });
-        });
-      }
-      return acc;
-    }, []);
-
-    const savedDirectExpenses = JSON.parse(localStorage.getItem("directExpenses")) || [];
-    const directExpensesWithSource = savedDirectExpenses.map(expense => ({ ...expense, source: 'directExpenses' }));
-
-    setExpenses([...allExpenses, ...directExpensesWithSource]);
+    const savedExpenses = JSON.parse(localStorage.getItem("directExpenses")) || [];
+    setExpenses(savedExpenses);
   }, []);
 
-  // Function to handle receipt image upload
+  // Save expenses to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem("directExpenses", JSON.stringify(expenses));
+  }, [expenses]);
+
+  // Handle form input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setNewExpense((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle file input for receipt upload
   const handleReceiptUpload = (e) => {
     const file = e.target.files[0];
     const reader = new FileReader();
     reader.onloadend = () => {
-      setNewExpenseReceipt(reader.result); // Convert file to Base64 and save in state
+      setNewExpense((prev) => ({
+        ...prev,
+        receipt: reader.result, // Save the file as Base64 string
+      }));
     };
     if (file) {
       reader.readAsDataURL(file);
     }
   };
 
-  // Function to add a new expense directly from the Expenses component
-  const addDirectExpense = () => {
-    if (!newExpenseDescription || !newExpenseAmount) {
-      alert("Please fill in the description and amount.");
-      return;
-    }
-
-    const newExpense = {
-      description: newExpenseDescription,
-      amount: parseFloat(newExpenseAmount),
-      receipt: newExpenseReceipt, // Store the uploaded receipt (Base64 string)
-      jobNumber: newJobNumber || "N/A", // Use N/A if no job number is provided
-      source: 'directExpenses' // Mark as direct expense
+  // Add new expense
+  const addExpense = () => {
+    const newExpenseEntry = {
+      ...newExpense,
+      amount: parseFloat(newExpense.amount),
     };
 
-    const updatedExpenses = [...expenses, newExpense];
-    setExpenses(updatedExpenses);
+    setExpenses([...expenses, newExpenseEntry]);
+    setShowForm(false); // Hide form after adding expense
 
-    // Save new expense to localStorage
-    const savedDirectExpenses = JSON.parse(localStorage.getItem("directExpenses")) || [];
-    savedDirectExpenses.push(newExpense);
-    localStorage.setItem("directExpenses", JSON.stringify(savedDirectExpenses));
-
-    // Reset form fields
-    setNewExpenseDescription("");
-    setNewExpenseAmount("");
-    setNewExpenseReceipt(null);
-    setNewJobNumber(""); // Reset job number field
+    // Reset form
+    setNewExpense({
+      jobNumber: "",
+      description: "",
+      amount: "",
+      receipt: null,
+    });
   };
 
-  // Function to delete an expense
-  const deleteExpense = (expenseIndex, source, jobNumber = null) => {
-    let updatedExpenses = [...expenses];
+  // Edit expense
+  const editExpense = (index) => {
+    const expenseToEdit = expenses[index];
+    setNewExpense(expenseToEdit);
+    deleteExpense(index);
+    setShowForm(true); // Show form for editing
+  };
 
-    if (source === 'openJobs' && jobNumber !== null) {
-      // Delete from openJobs
-      const openJobs = JSON.parse(localStorage.getItem('openJobs')) || [];
-      const jobIndex = openJobs.findIndex(job => job.jobNumber === jobNumber);
-      
-      if (jobIndex > -1) {
-        openJobs[jobIndex].expenses.splice(expenseIndex, 1); // Remove the expense from job
-        localStorage.setItem('openJobs', JSON.stringify(openJobs));
-      }
-    } else if (source === 'directExpenses') {
-      // Delete from directExpenses
-      const savedDirectExpenses = JSON.parse(localStorage.getItem("directExpenses")) || [];
-      savedDirectExpenses.splice(expenseIndex, 1);
-      localStorage.setItem("directExpenses", JSON.stringify(savedDirectExpenses));
-    }
-
-    // Remove from current state
-    updatedExpenses.splice(expenseIndex, 1);
+  // Delete expense
+  const deleteExpense = (index) => {
+    const updatedExpenses = expenses.filter((_, i) => i !== index);
     setExpenses(updatedExpenses);
+  };
+
+  // Filter expenses by job number only
+  const filteredExpenses = expenses.filter((expense) => {
+    return expense.jobNumber.toLowerCase().includes(filterJobNumber.toLowerCase());
+  });
+
+  // Generate PDF
+  const handlePrintExpenses = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(10);
+    doc.text("Expense Report", 10, 10);
+
+    filteredExpenses.forEach((expense, index) => {
+      const line = `Job #${expense.jobNumber} | ${expense.description} | $${expense.amount.toFixed(2)}`;
+      doc.text(line, 10, 20 + index * 10);
+    });
+
+    doc.save("expenses_report.pdf");
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* Header with Home and Add Expense Button */}
+      {/* Header with Home and Add Expense buttons */}
       <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Expenses</h1>
         <div>
+          <h1 className="text-2xl font-bold">Expenses</h1>
+        </div>
+        <div className="flex space-x-4">
+          {/* Home button */}
           <button
-            className="bg-green text-white p-2 rounded mr-4"
-            onClick={() => navigate('/')} // Navigate back to the dashboard
+            className="bg-green text-white p-2 rounded"
+            onClick={() => navigate("/")}
           >
             Home
           </button>
-          
         </div>
       </header>
 
-      {/* Add Direct Expense Form */}
-      <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow">
-        <h3 className="font-semibold mb-2">Add Direct Expense</h3>
+      {/* Filter Section */}
+      <div className="mb-4">
+        <label htmlFor="filterJobNumber" className="block font-bold mb-2">
+          Filter by Job Number:
+        </label>
         <input
           type="text"
-          placeholder="Job Number (Optional)"
-          className="border p-2 w-full mb-2"
-          value={newJobNumber}
-          onChange={(e) => setNewJobNumber(e.target.value)}
+          id="filterJobNumber"
+          value={filterJobNumber}
+          onChange={(e) => setFilterJobNumber(e.target.value)}
+          className="border rounded p-2 w-full"
+          placeholder="Enter job number..."
         />
-        <input
-          type="text"
-          placeholder="Expense Description"
-          className="border p-2 w-full mb-2"
-          value={newExpenseDescription}
-          onChange={(e) => setNewExpenseDescription(e.target.value)}
-        />
-        <input
-          type="number"
-          placeholder="Expense Amount"
-          className="border p-2 w-full mb-2"
-          value={newExpenseAmount}
-          onChange={(e) => setNewExpenseAmount(e.target.value)}
-        />
-        <input
-          type="file"
-          accept="image/*"
-          className="border p-2 w-full mb-2"
-          onChange={handleReceiptUpload} // Handle receipt upload
-        />
-        <button
-          className="bg-blue text-white p-2 rounded"
-          onClick={addDirectExpense}
-        >
-          Add Expense
-        </button>
       </div>
 
+      {/* Print Button */}
+      <button
+        className="bg-blue text-white p-2 rounded mb-4 mr-4"
+        onClick={handlePrintExpenses}
+      >
+        Download Expense Report (PDF)
+      </button>
+
+      {/* Add Expense button */}
+      <button
+        className="bg-darkBlue text-white p-2 rounded mt-4 mb-4"
+        onClick={() => setShowForm(!showForm)}
+      >
+        {showForm ? "Cancel" : "Add Expense"}
+      </button>
+
+      {/* Expense Form */}
+      {showForm && (
+        <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow">
+          <div className="mb-4">
+            <label htmlFor="jobNumber" className="block font-bold mb-2">
+              Job Number
+            </label>
+            <input
+              type="text"
+              id="jobNumber"
+              name="jobNumber"
+              value={newExpense.jobNumber}
+              onChange={handleChange}
+              className="border rounded p-2 w-full"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="description" className="block font-bold mb-2">
+              Description
+            </label>
+            <input
+              type="text"
+              id="description"
+              name="description"
+              value={newExpense.description}
+              onChange={handleChange}
+              className="border rounded p-2 w-full"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="amount" className="block font-bold mb-2">
+              Amount
+            </label>
+            <input
+              type="number"
+              id="amount"
+              name="amount"
+              value={newExpense.amount}
+              onChange={handleChange}
+              className="border rounded p-2 w-full"
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="receipt" className="block font-bold mb-2">
+              Receipt (optional)
+            </label>
+            <input
+              type="file"
+              id="receipt"
+              accept="image/*"
+              onChange={handleReceiptUpload}
+              className="border rounded p-2 w-full"
+            />
+          </div>
+          <button
+            className="bg-green text-white p-2 rounded"
+            onClick={addExpense}
+          >
+            Save Expense
+          </button>
+        </div>
+      )}
+
       {/* Expenses List */}
-      <div className="mb-4">
-        {expenses.length > 0 ? (
-          expenses.map((expense, index) => (
+      <div className="bg-white p-4 rounded-lg shadow">
+        {filteredExpenses.length > 0 ? (
+          filteredExpenses.map((expense, index) => (
             <div key={index} className="mb-4 p-4 bg-gray-100 rounded-lg shadow">
-              <p>Job #{expense.jobNumber || "N/A"} - {expense.customerName || "Direct Expense"}</p>
-              <p>Description: {expense.description}</p>
-              <p>Amount: ${expense.amount.toFixed(2)}</p>
+              <div className="flex justify-between">
+                <span>Job #{expense.jobNumber}</span>
+                <span>${expense.amount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>{expense.description}</span>
+                <div className="flex space-x-4">
+                  <button
+                    className="bg-tealLight text-white p-2 rounded"
+                    onClick={() => editExpense(index)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="bg-pink text-white p-2 rounded"
+                    onClick={() => deleteExpense(index)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              {/* Display the uploaded receipt image */}
               {expense.receipt && (
                 <div className="mt-2">
                   <p>Receipt:</p>
-                  <img src={expense.receipt} alt="Receipt" className="w-20 h-20 object-cover" />
+                  <img
+                    src={expense.receipt}
+                    alt="Receipt"
+                    className="w-32 h-32 object-cover"
+                  />
                 </div>
               )}
-              <button
-                className="bg-pink text-white p-2 mt-4 rounded"
-                onClick={() => deleteExpense(index, expense.source, expense.jobNumber)} // Pass job number for open job expenses
-              >
-                Delete Expense
-              </button>
             </div>
           ))
         ) : (
-          <p>No expenses recorded.</p>
+          <p>No expenses found.</p>
         )}
       </div>
     </div>

@@ -16,7 +16,14 @@ export const generateDetailedInvoicePDF = (invoice) => {
   logoImage.onload = () => {
     // Add the logo image
     const imgProps = { x: 18, y: 10, width: 100, height: 60 };
-    doc.addImage(logoImage, "PNG", imgProps.x, imgProps.y, imgProps.width, imgProps.height);
+    doc.addImage(
+      logoImage,
+      "PNG",
+      imgProps.x,
+      imgProps.y,
+      imgProps.width,
+      imgProps.height
+    );
 
     // Company Information Box
     doc.setFontSize(10);
@@ -51,7 +58,7 @@ export const generateDetailedInvoicePDF = (invoice) => {
     doc.text(`Date: ${invoice.date || "N/A"}`, 157, 27);
     doc.text(`Invoice # ${invoice.estimateNumber || "N/A"}`, 157, 35);
     doc.line(155, 30, 195, 30); // Line between Date and Invoice Number
-    doc.rect(155, 22, 40, 15);  // Box around Date and Invoice Number
+    doc.rect(155, 22, 40, 15); // Box around Date and Invoice Number
 
     // Customer Information
     const customerInfoLabel = "Name / Address:";
@@ -102,8 +109,18 @@ export const generateDetailedInvoicePDF = (invoice) => {
     const verticalLineXRight = 168; // Before "Total"
     const verticalLineYStart = gridBoxY;
     const verticalLineYEnd = gridBoxY + gridBoxHeight;
-    doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd);
-    doc.line(verticalLineXRight, verticalLineYStart, verticalLineXRight, verticalLineYEnd); // Before the Total column
+    doc.line(
+      verticalLineX,
+      verticalLineYStart,
+      verticalLineX,
+      verticalLineYEnd
+    );
+    doc.line(
+      verticalLineXRight,
+      verticalLineYStart,
+      verticalLineXRight,
+      verticalLineYEnd
+    ); // Before the Total column
 
     // Detailed Invoice Data (Rooms and Extras)
     const rooms = invoice.rooms || []; // Array of rooms
@@ -114,7 +131,12 @@ export const generateDetailedInvoicePDF = (invoice) => {
     allItems.forEach((item, i) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
         // If it's Square Footage, show "House" instead of "Room" in Items column
-        const itemType = item.roomName === "Square Footage" ? "House" : item.roomName ? "Room" : "Extra/Paint";
+        const itemType =
+          item.roomName === "Square Footage"
+            ? "House"
+            : item.roomName
+            ? "Room"
+            : "Extra/Paint";
         doc.text(itemType, headerX[0], gridY); // Items column
 
         // Handle the description (either room name or extra type)
@@ -126,13 +148,14 @@ export const generateDetailedInvoicePDF = (invoice) => {
         if (!item.roomName && item.type === "Other" && item.customType) {
           const splitCustomType = doc.splitTextToSize(item.customType, 70); // Split custom type for "Other"
           splitCustomType.forEach((line) => {
-            if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-              doc.text(line || "N/A", headerX[1], gridY); // Render the custom type on multiple lines
+            if (gridY + 5 <= gridBoxY + gridBoxHeight && line) {
+              // Ensure line has a value and fits within the grid box
+              doc.text(line, headerX[1], gridY); // Render the custom type on multiple lines
               gridY += 5; // Move down for each line
             }
           });
-        } else {
-          doc.text(description || "N/A", headerX[1], gridY); // Description column for non-custom or normal items
+        } else if (description) {
+          doc.text(description, headerX[1], gridY); // Description column for non-custom or normal items, if valid
         }
 
         // Set the total value (Square footage or price)
@@ -140,7 +163,9 @@ export const generateDetailedInvoicePDF = (invoice) => {
           const squareFootage = item.squareFootage || "N/A";
           doc.text(squareFootage.toString(), headerX[2], gridY); // Display entered square footage in Total column
         } else {
-          const itemCost = item.cost ? formatCurrency(item.cost) : formatCurrency(0);
+          const itemCost = item.cost
+            ? formatCurrency(item.cost)
+            : formatCurrency(0);
           doc.text(itemCost, headerX[2], gridY); // Total column for other rooms
         }
 
@@ -154,13 +179,17 @@ export const generateDetailedInvoicePDF = (invoice) => {
         ? invoice.customDescription
         : invoice.description;
 
+        gridY += 5; 
     // Split the description into lines if necessary
     const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
 
-    splitDescription.forEach((descRow) => {
+    splitDescription.forEach((row, i) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-        doc.text(descRow || "N/A", headerX[1], gridY); // Place in the description column
-        gridY += 5; // Move down for each row of the description
+        // Ensure text stays within the grid box
+        if (row) {
+          doc.text(row, headerX[1], gridY); // Render the row if it's not null/undefined
+        }
+        gridY += 5; // Increase the Y position for each row
       }
     });
 
@@ -176,11 +205,7 @@ export const generateDetailedInvoicePDF = (invoice) => {
 
     doc.setFont("helvetica", "bold");
     doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
-    doc.text(
-      "GST/HST:",
-      totalsBoxX + 2,
-      totalsBoxY + totalsLineHeight * 2 - 2
-    );
+    doc.text("GST/HST:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 2 - 2);
     doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
 
     // Add lines between the subtotal, GST/HST, and total

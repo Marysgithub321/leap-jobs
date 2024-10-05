@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 const PastJobs = () => {
   const [closedJobs, setClosedJobs] = useState([]);
+  const [visibleJobs, setVisibleJobs] = useState([]); // State to track which jobs are visible
   const navigate = useNavigate();
 
   // Load closed jobs from localStorage on component mount
@@ -11,6 +12,15 @@ const PastJobs = () => {
       JSON.parse(localStorage.getItem("closedJobs")) || [];
     setClosedJobs(savedClosedJobs);
   }, []);
+
+  // Function to toggle job visibility
+  const toggleJobVisibility = (jobIndex) => {
+    if (visibleJobs.includes(jobIndex)) {
+      setVisibleJobs(visibleJobs.filter((index) => index !== jobIndex));
+    } else {
+      setVisibleJobs([...visibleJobs, jobIndex]);
+    }
+  };
 
   // Function to delete a closed job
   const handleDelete = (jobIndex) => {
@@ -34,7 +44,15 @@ const PastJobs = () => {
     }
 
     // Add the job as an invoice if it doesn't exist
-    savedInvoices.push(job);
+    const defaultInvoiceDescription = "Thank you for your business! Payment due upon receipt.";
+
+    // Modify the job's description for the invoice
+    const invoice = {
+      ...job,
+      description: defaultInvoiceDescription, // Set the invoice-specific description
+    };
+
+    savedInvoices.push(invoice);
     localStorage.setItem("invoices", JSON.stringify(savedInvoices));
     alert("Invoice created successfully!");
   };
@@ -61,88 +79,99 @@ const PastJobs = () => {
               <span>Job #{job.estimateNumber}</span>
               <span>{job.customerName}</span>
               <span>{job.date}</span>
-            </div>
-
-            <div className="mb-4">
-              <p>Address: {job.address}</p>
-              <p>Phone: {job.phoneNumber}</p>
-            </div>
-
-            {/* Display Room details */}
-            <div className="mb-4">
-              <h3 className="font-semibold">Rooms</h3>
-              {job.rooms &&
-                job.rooms.map((room, roomIndex) => {
-                  const isSquareFootage = room.roomName === "Square Footage";
-                  const squareFootagePrice =
-                    job.costOptions?.find(
-                      (option) => option.label === "Square Footage"
-                    )?.value || 0; // Use the saved costOption for square footage
-
-                  const roomCost = isSquareFootage
-                    ? room.squareFootage * squareFootagePrice
-                    : room.cost;
-
-                  return (
-                    <div key={roomIndex} className="mb-2">
-                      <p>Room: {room.roomName}</p>
-                      {isSquareFootage ? (
-                        <>
-                          <p>Square Footage: {room.squareFootage} sq ft</p>
-                          <p>Cost: ${roomCost.toFixed(2)}</p>
-                        </>
-                      ) : (
-                        <p>Cost: ${roomCost.toFixed(2)}</p>
-                      )}
-                    </div>
-                  );
-                })}
-            </div>
-
-            {/* Display Extra details */}
-            {job.extras && job.extras.length > 0 && (
-              <div className="mb-4">
-                <h3 className="font-semibold">Extras</h3>
-                {job.extras.map((extra, extraIndex) => (
-                  <div key={extraIndex} className="mb-2">
-                    <p>Extra: {extra.type}</p>
-                    <p>Cost: ${extra.cost}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Totals */}
-            <div className="section-bordered border-t mt-4 pt-4">
-              <div className="flex justify-between">
-                <p>Subtotal:</p>
-                <p>${job.subtotal.toFixed(2)}</p>
-              </div>
-              <div className="flex justify-between">
-                <p>GST/HST (13%):</p>
-                <p>${(job.subtotal * 0.13).toFixed(2)}</p>
-              </div>
-              <div className="flex justify-between font-bold">
-                <p>Total:</p>
-                <p>${(job.subtotal * 1.13).toFixed(2)}</p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex space-x-4">
               <button
                 className="bg-darkBlue text-white p-2 rounded"
-                onClick={() => saveAsInvoice(job)} // Save the job as an invoice
+                onClick={() => toggleJobVisibility(jobIndex)}
               >
-                Create Invoice
-              </button>
-              <button
-                className="bg-pink text-white p-2 rounded"
-                onClick={() => handleDelete(jobIndex)}
-              >
-                Delete
+                {visibleJobs.includes(jobIndex) ? "Close" : "Open"}
               </button>
             </div>
+
+            {/* Job details visible only when the "Open" button is clicked */}
+            {visibleJobs.includes(jobIndex) && (
+              <>
+                <div className="mb-4">
+                  <p>Address: {job.address}</p>
+                  <p>Phone: {job.phoneNumber}</p>
+                </div>
+
+                {/* Display Room details */}
+                <div className="mb-4">
+                  <h3 className="font-semibold">Rooms</h3>
+                  {job.rooms &&
+                    job.rooms.map((room, roomIndex) => {
+                      const isSquareFootage = room.roomName === "Square Footage";
+                      const squareFootagePrice =
+                        job.costOptions?.find(
+                          (option) => option.label === "Square Footage"
+                        )?.value || 0; // Use the saved costOption for square footage
+
+                      const roomCost = isSquareFootage
+                        ? room.squareFootage * squareFootagePrice
+                        : room.cost;
+
+                      return (
+                        <div key={roomIndex} className="mb-2">
+                          <p>Room: {room.roomName}</p>
+                          {isSquareFootage ? (
+                            <>
+                              <p>Square Footage: {room.squareFootage} sq ft</p>
+                              <p>Cost: ${roomCost.toFixed(2)}</p>
+                            </>
+                          ) : (
+                            <p>Cost: ${roomCost.toFixed(2)}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+
+                {/* Display Extra details */}
+                {job.extras && job.extras.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="font-semibold">Extras</h3>
+                    {job.extras.map((extra, extraIndex) => (
+                      <div key={extraIndex} className="mb-2">
+                        <p>Extra: {extra.type}</p>
+                        <p>Cost: ${extra.cost}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Totals */}
+                <div className="section-bordered border-t mt-4 pt-4">
+                  <div className="flex justify-between">
+                    <p>Subtotal:</p>
+                    <p>${job.subtotal.toFixed(2)}</p>
+                  </div>
+                  <div className="flex justify-between">
+                    <p>GST/HST (13%):</p>
+                    <p>${(job.subtotal * 0.13).toFixed(2)}</p>
+                  </div>
+                  <div className="flex justify-between font-bold">
+                    <p>Total:</p>
+                    <p>${(job.subtotal * 1.13).toFixed(2)}</p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-4">
+                  <button
+                    className="bg-darkBlue text-white p-2 rounded"
+                    onClick={() => saveAsInvoice(job)} // Save the job as an invoice
+                  >
+                    Create Invoice
+                  </button>
+                  <button
+                    className="bg-pink text-white p-2 rounded"
+                    onClick={() => handleDelete(jobIndex)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ))
       ) : (

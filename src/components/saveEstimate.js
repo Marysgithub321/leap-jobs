@@ -6,10 +6,10 @@ const EstimateCalculator = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Extract both job and estimate data from location.state (whichever exists)
-  const initialData = location.state?.estimate || {};
+  // Extract job or estimate from location.state
+  const initialData = location.state?.job || location.state?.estimate || {};
 
-  // Initialize form state with estimate data
+  // Initialize form state with data from job or estimate
   const [customerName, setCustomerName] = useState(
     initialData.customerName || ""
   );
@@ -131,16 +131,16 @@ const EstimateCalculator = () => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
         const squareFootagePrice =
-          costOptions.find((option) => option.label === "Square Footage")
+          room.lockedPrice || costOptions.find((option) => option.label === "Square Footage")
             ?.value || 0;
         return acc + (room.squareFootage * squareFootagePrice || 0);
       } else {
-        return acc + parseFloat(room.cost || 0);
+        return acc + (room.lockedPrice || parseFloat(room.cost || 0));
       }
     }, 0);
 
     const extrasTotal = extras.reduce(
-      (acc, extra) => acc + parseFloat(extra.cost || 0),
+      (acc, extra) => acc + parseFloat(extra.lockedCost || extra.cost || 0),
       0
     );
 
@@ -158,16 +158,31 @@ const EstimateCalculator = () => {
   const addRoom = () =>
     setRooms([
       ...rooms,
-      { roomName: "", customRoomName: "", cost: 0, customCost: false, squareFootage: 0 }, // Include squareFootage property
+      {
+        roomName: "",
+        customRoomName: "",
+        cost: 0,
+        lockedPrice: 0,  // Initialize lockedPrice for room
+        squareFootage: 0,
+      }, // Include squareFootage property
     ]);
 
   // Add Extra Handler
   const addExtra = () =>
-    setExtras([...extras, { type: "", customType: "", cost: 0 }]);
+    setExtras([...extras, { type: "", customType: "", cost: 0, lockedCost: 0 }]); // Initialize lockedCost for extra
 
   // Update Room Handler
   const updateRoom = (index, field, value) => {
     const updatedRooms = [...rooms];
+    
+    // If cost is being updated, lock the current price
+    if (field === "cost") {
+      const selectedCost = costOptions.find(opt => opt.value === parseFloat(value));
+      if (selectedCost) {
+        updatedRooms[index].lockedPrice = selectedCost.value;
+      }
+    }
+
     updatedRooms[index][field] = value;
     setRooms(updatedRooms);
   };
@@ -175,6 +190,12 @@ const EstimateCalculator = () => {
   // Update Extra Handler
   const updateExtra = (index, field, value) => {
     const updatedExtras = [...extras];
+    
+    // If cost is being updated, lock the current price
+    if (field === "cost") {
+      updatedExtras[index].lockedCost = value;
+    }
+
     updatedExtras[index][field] = value;
     setExtras(updatedExtras);
   };
@@ -408,12 +429,15 @@ const EstimateCalculator = () => {
                     {option.label}:
                   </label>
                   <input
-                    type="number"
-                    value={option.value}
+                    type="text" // Use text to allow an empty value
+                    value={option.value === 0 ? "" : option.value} // Show empty if value is 0
                     onChange={(e) => {
-                      const newValue = parseFloat(e.target.value) || 0; // Ensure it's a valid number
+                      const newValue =
+                        e.target.value === "" ? "" : parseFloat(e.target.value); // Allow empty string
                       const updatedOptions = costOptions.map((item, i) =>
-                        i === index ? { ...item, value: newValue } : item
+                        i === index
+                          ? { ...item, value: isNaN(newValue) ? "" : newValue }
+                          : item
                       );
                       setCostOptions(updatedOptions); // Update state immutably
                     }}
@@ -421,6 +445,7 @@ const EstimateCalculator = () => {
                   />
                 </div>
               ))}
+
               <button
                 className="bg-pink text-white p-2 mt-4 rounded w-full"
                 onClick={savePrices}

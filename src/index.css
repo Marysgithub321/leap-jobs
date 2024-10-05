@@ -2,3 +2,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.description {
+    white-space: pre-wrap;   /* Preserves whitespace and wraps text */
+    word-wrap: break-word;   /* Breaks long words if needed */
+    width: 100%;             /* Ensures the container takes up full width */
+    max-width: 70ch;         /* Restricts the width to approximately 70 characters */
+  }
+  

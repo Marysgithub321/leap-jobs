@@ -96,7 +96,9 @@ const StaffPayouts = () => {
       doc.text(line, 10, 20 + index * 10);
     });
 
-    doc.save("staff_payouts.pdf");
+    const fileName = filterName ? `${filterName}_payout.pdf` : "staff_payouts.pdf";
+doc.save(fileName);
+
   };
 
   return (

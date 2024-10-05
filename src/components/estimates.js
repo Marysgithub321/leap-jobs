@@ -147,12 +147,15 @@ const maxLineWidth = 70; // Adjust this value based on how many characters per l
 const splitDescription = doc.splitTextToSize(finalDescription, maxLineWidth); // Split the description
 
 splitDescription.forEach((row, i) => {
-if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-  // Ensure text stays within the grid box
-  doc.text(row || "N/A", headerX[1], gridY);
-  gridY += 5; // Increase the Y position for each row
-}
+  if (gridY + 5 <= gridBoxY + gridBoxHeight) {
+    // Ensure text stays within the grid box
+    if (row) {
+      doc.text(row, headerX[1], gridY); // Render the row if it's not null/undefined
+    }
+    gridY += 5; // Increase the Y position for each row
+  }
 });
+
 
       // Totals Box (Fixed Position 15 units below the grid)
       const totalsBoxX = 150;
