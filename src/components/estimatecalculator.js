@@ -253,44 +253,9 @@ const EstimateCalculator = () => {
     navigate("/estimates"); // Redirect to the estimates page
   };
 
-  // Function to add the estimate as an open job
-  const openJob = () => {
-    const gstHst = total * 0.13; // 13% GST/HST calculation
-
-    const updatedEstimate = {
-      customerName,
-      estimateNumber,
-      date,
-      address,
-      phoneNumber,
-      rooms,
-      extras,
-      subtotal: total,
-      gstHst,
-      total: total + gstHst,
-      description, // Save the selected description
-      customDescription, // Save the custom description if entered
-    };
-
-    const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
-    const openJobIndex = openJobs.findIndex(
-      (job) => job.estimateNumber === estimateNumber
-    );
-
-    if (openJobIndex !== -1) {
-      openJobs[openJobIndex] = updatedEstimate;
-    } else {
-      openJobs.push(updatedEstimate);
-    }
-
-    localStorage.setItem("openJobs", JSON.stringify(openJobs));
-    navigate("/open-jobs"); // Redirect to the open jobs page
-  };
-
   // Add description options
   const descriptionOptions = [
     "This estimate is valid for 10 days and includes both labor and materials. Any additional work or materials not covered will incur extra charges. Feel free to contact me for any questions.",
-    
     "This estimate is valid for 10 days and includes labor for the agreed-upon scope of work. Any additional tasks or materials not mentioned will result in extra costs. Feel free to contact me with questions.",
     "Includes all the labor, paint is extra.",
     "Includes both labor and paint.",
@@ -691,19 +656,13 @@ const EstimateCalculator = () => {
             </div>
           </div>
 
-          {/* Save Estimate and Open Job Buttons */}
+          {/* Save Estimate Button */}
           <div className="flex flex-wrap gap-4 mt-4">
             <button
               className="bg-green text-white p-2 w-full sm:w-auto rounded"
               onClick={saveEstimate}
             >
               Save Estimate
-            </button>
-            <button
-              className="bg-blue text-white p-2 w-full sm:w-auto rounded"
-              onClick={openJob}
-            >
-              Open Job
             </button>
           </div>
         </div>

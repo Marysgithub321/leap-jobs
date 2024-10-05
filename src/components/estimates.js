@@ -21,6 +21,45 @@ const Estimates = () => {
     localStorage.setItem("estimates", JSON.stringify(updatedEstimates));
   };
 
+  // Function to open a job (move estimate to openJobs)
+  const openJob = (estimate) => {
+    const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
+    
+    // Check if the job is already open
+    const isJobOpen = openJobs.some(job => job.estimateNumber === estimate.estimateNumber);
+    if (isJobOpen) {
+      alert("This job is already open.");
+      return;
+    }
+
+    openJobs.push(estimate);
+    localStorage.setItem("openJobs", JSON.stringify(openJobs));
+    alert(`Job ${estimate.estimateNumber} opened.`);
+  };
+
+  // Function to close a job (move estimate to closedJobs)
+  const closeJob = (estimate) => {
+    const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
+    const openJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
+
+    // Check if the job is already closed
+    const isJobClosed = closedJobs.some(job => job.estimateNumber === estimate.estimateNumber);
+    if (isJobClosed) {
+      alert("This job is already closed.");
+      return;
+    }
+
+    // Move job to closedJobs
+    closedJobs.push(estimate);
+    localStorage.setItem("closedJobs", JSON.stringify(closedJobs));
+
+    // Remove job from openJobs if it exists
+    const updatedOpenJobs = openJobs.filter(job => job.estimateNumber !== estimate.estimateNumber);
+    localStorage.setItem("openJobs", JSON.stringify(updatedOpenJobs));
+    
+    alert(`Job ${estimate.estimateNumber} closed.`);
+  };
+
   // Function to format currency
   const formatCurrency = (num) =>
     "$" + num.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, "$&,");
@@ -108,54 +147,53 @@ const Estimates = () => {
 
       let gridY = 117; // Fixed starting Y position for the grid
 
-// Headers
-const headers = ["Items", "Description"];
-const headerX = [18, 43];
-doc.setFontSize(10);
-doc.setFont("helvetica");
+      // Headers
+      const headers = ["Items", "Description"];
+      const headerX = [18, 43];
+      doc.setFontSize(10);
+      doc.setFont("helvetica");
 
-// Render Headers
-headers.forEach((header, i) => {
-  doc.text(header, headerX[i], gridY);
-});
+      // Render Headers
+      headers.forEach((header, i) => {
+        doc.text(header, headerX[i], gridY);
+      });
 
-// Draw a box around the grid (Fixed Size)
-const gridBoxX = 15;
-const gridBoxY = 110; // Starting Y position for the grid box
-const gridBoxWidth = 180; // Fixed width
-const gridBoxHeight = 120; // Fixed height
-doc.rect(gridBoxX, gridBoxY, gridBoxWidth, gridBoxHeight); // Removed the -5 offset for alignment
+      // Draw a box around the grid (Fixed Size)
+      const gridBoxX = 15;
+      const gridBoxY = 110; // Starting Y position for the grid box
+      const gridBoxWidth = 180; // Fixed width
+      const gridBoxHeight = 120; // Fixed height
+      doc.rect(gridBoxX, gridBoxY, gridBoxWidth, gridBoxHeight); // Removed the -5 offset for alignment
 
-// Line below headers
-doc.line(15, gridY + 2, 195, gridY + 2);
-gridY += 10;
+      // Line below headers
+      doc.line(15, gridY + 2, 195, gridY + 2);
+      gridY += 10;
 
-// Add a vertical line inside the grid
-const verticalLineX = 40; // X position for the vertical line
-const verticalLineYStart = gridBoxY; // Start at the top of the grid
-const verticalLineYEnd = gridBoxY + gridBoxHeight; // End at the bottom of the grid
-doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd); // Draw the vertical line
+      // Add a vertical line inside the grid
+      const verticalLineX = 40; // X position for the vertical line
+      const verticalLineYStart = gridBoxY; // Start at the top of the grid
+      const verticalLineYEnd = gridBoxY + gridBoxHeight; // End at the bottom of the grid
+      doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd); // Draw the vertical line
 
       // Render the grid data (Description)
-const finalDescription =
-estimate.description === "Other"
-  ? estimate.customDescription
-  : estimate.description;
+      const finalDescription =
+        estimate.description === "Other"
+          ? estimate.customDescription
+          : estimate.description;
 
-// Split the description into multiple lines with a maximum of 50 characters per line
-const maxLineWidth = 70; // Adjust this value based on how many characters per line you want
-const splitDescription = doc.splitTextToSize(finalDescription, maxLineWidth); // Split the description
+      // Split the description into multiple lines with a maximum of 50 characters per line
+      const maxLineWidth = 70; // Adjust this value based on how many characters per line you want
+      const splitDescription = doc.splitTextToSize(finalDescription, maxLineWidth); // Split the description
 
-splitDescription.forEach((row, i) => {
-  if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-    // Ensure text stays within the grid box
-    if (row) {
-      doc.text(row, headerX[1], gridY); // Render the row if it's not null/undefined
-    }
-    gridY += 5; // Increase the Y position for each row
-  }
-});
-
+      splitDescription.forEach((row, i) => {
+        if (gridY + 5 <= gridBoxY + gridBoxHeight) {
+          // Ensure text stays within the grid box
+          if (row) {
+            doc.text(row, headerX[1], gridY); // Render the row if it's not null/undefined
+          }
+          gridY += 5; // Increase the Y position for each row
+        }
+      });
 
       // Totals Box (Fixed Position 15 units below the grid)
       const totalsBoxX = 150;
@@ -258,24 +296,24 @@ splitDescription.forEach((row, i) => {
             <p>{`Address: ${estimate.address || "N/A"}`}</p>
             <p>{`Total: ${estimate.total || "N/A"}`}</p>
 
-            <div className="flex space-x-4">
+            {/* Button Container with Flexbox */}
+            <div className="flex flex-wrap gap-2 mt-4">
               <button
-                className="bg-tealLight text-white p-2 mt-4 rounded"
+                className="bg-tealLight text-white p-2 rounded w-full sm:w-auto"
                 onClick={() => generatePDF(estimate)}
               >
-               Estimate
+                Estimate
               </button>
 
-               {/* Detailed Estimate Button */}
-               <button
-                className="bg-darkBlue text-white p-2 mt-4 rounded"
-                onClick={() => generateDetailedPDF(estimate)} // Call the imported function
+              <button
+                className="bg-darkBlue text-white p-2 rounded w-full sm:w-auto"
+                onClick={() => generateDetailedPDF(estimate)}
               >
                 Detailed Estimate
               </button>
 
               <button
-                className="bg-blue text-white p-2 mt-4 rounded"
+                className="bg-blue text-white p-2 rounded w-full sm:w-auto"
                 onClick={() =>
                   navigate("/estimate-calculator", { state: { estimate } })
                 }
@@ -284,10 +322,24 @@ splitDescription.forEach((row, i) => {
               </button>
 
               <button
-                className="bg-pink text-white p-2 mt-4 rounded"
+                className="bg-tealLight text-white p-2 rounded w-full sm:w-auto"
+                onClick={() => openJob(estimate)}
+              >
+                Open Job
+              </button>
+
+              <button
+                className="bg-darkBlue text-white p-2 rounded w-full sm:w-auto"
+                onClick={() => closeJob(estimate)}
+              >
+                Close Job
+              </button>
+
+              <button
+                className="bg-pink text-white p-2 rounded w-full sm:w-auto"
                 onClick={() => deleteEstimate(index)}
               >
-                Delete 
+                Delete
               </button>
             </div>
           </div>

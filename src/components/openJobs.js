@@ -29,26 +29,6 @@ const OpenJobs = () => {
     saveJobs(updatedJobs);
   };
 
-  // Function to move a job to closed jobs
-  const closeJob = (jobIndex) => {
-    const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
-    const jobToClose = openJobs[jobIndex];
-
-    // Check if the job already exists in closedJobs
-    const isJobClosed = closedJobs.some(
-      (job) => job.estimateNumber === jobToClose.estimateNumber
-    );
-
-    if (isJobClosed) {
-      alert("This job is already closed and cannot be closed again.");
-      return;
-    }
-
-    closedJobs.push(jobToClose);
-    localStorage.setItem("closedJobs", JSON.stringify(closedJobs));
-    deleteJob(jobIndex); // Call deleteJob to remove from open jobs after moving
-  };
-
   // Function to update room progress (tracking selections)
   const updateRoomProgress = (jobIndex, roomIndex, progressOption) => {
     const updatedJobs = [...openJobs];
@@ -217,22 +197,8 @@ const OpenJobs = () => {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-4">
-                  <button
-                    className="bg-blue text-white p-2 rounded"
-                    onClick={() =>
-                      navigate("/estimate-calculator", {
-                        state: { job, jobIndex },
-                      })
-                    }
-                  >
-                    Edit Job
-                  </button>
-                  <button
-                    className="bg-tealLight text-white p-2 rounded"
-                    onClick={() => closeJob(jobIndex)}
-                  >
-                    Close Job
-                  </button>
+                  {/* Remove the Edit Job Button */}
+                  {/* Remove the Close Job Button */}
                   <button
                     className="bg-pink text-white p-2 rounded"
                     onClick={() => deleteJob(jobIndex)}
