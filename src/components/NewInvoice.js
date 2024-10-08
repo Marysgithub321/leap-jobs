@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { getNextAvailableNumber } from "../utils"; // Import the utility function
+import { getNextAvailableNumber } from "../utils";
 
 const NewInvoice = () => {
   const navigate = useNavigate();
@@ -30,7 +30,6 @@ const NewInvoice = () => {
     { label: "Other", value: 50 },
   ];
 
-  // State initialization
   const [costOptions, setCostOptions] = useState(() => {
     const savedCostOptions =
       JSON.parse(localStorage.getItem("invoiceCostOptions")) || [];
@@ -87,7 +86,6 @@ const NewInvoice = () => {
 
   const extraOptions = ["Paint", "Stain", "Primer", "Travel", "Other"];
 
-  // Initialize form state
   const [customerName, setCustomerName] = useState(
     location.state?.job?.customerName || ""
   );
@@ -119,13 +117,11 @@ const NewInvoice = () => {
       const closedJobs = JSON.parse(localStorage.getItem("closedJobs")) || [];
       const invoices = JSON.parse(localStorage.getItem("invoices")) || [];
 
-      // Generate the next available invoice number
       const nextInvoiceNumber = getNextAvailableNumber(
         [...estimates, ...openJobs, ...closedJobs, ...invoices],
         "estimateNumber"
       );
-
-      setEstimateNumber(nextInvoiceNumber); // Set the next available invoice number
+      setEstimateNumber(nextInvoiceNumber);
     }
   }, [estimateNumber]);
 
@@ -133,11 +129,10 @@ const NewInvoice = () => {
   const calculateTotal = useCallback(() => {
     const roomsTotal = rooms.reduce((acc, room) => {
       if (room.roomName === "Square Footage") {
-        // Use locked price per square foot if available
         const sqftCost = room.lockedSquareFootPrice || 0;
         return acc + parseFloat(room.squareFootage || 0) * sqftCost;
       }
-      return acc + (room.lockedPrice ?? parseFloat(room.cost || 0)); // Use locked price or fallback to cost
+      return acc + (room.lockedPrice ?? parseFloat(room.cost || 0));
     }, 0);
 
     const extrasTotal = extras.reduce(
@@ -147,7 +142,7 @@ const NewInvoice = () => {
 
     const subtotal = roomsTotal + extrasTotal;
     setTotal(subtotal);
-    setGstHst(subtotal * 0.13); // 13% GST/HST
+    setGstHst(subtotal * 0.13);
   }, [rooms, extras]);
 
   useEffect(() => {
@@ -177,24 +172,24 @@ const NewInvoice = () => {
     );
 
     if (existingInvoiceIndex > -1) {
-      invoices[existingInvoiceIndex] = newInvoice; // Update existing invoice
+      invoices[existingInvoiceIndex] = newInvoice;
     } else {
-      invoices.push(newInvoice); // Add new invoice
+      invoices.push(newInvoice);
     }
 
     localStorage.setItem("invoices", JSON.stringify(invoices));
     navigate("/invoices");
   };
 
-  // Add Room
+  // Handlers for adding, updating, and removing rooms and extras
   const addRoom = () =>
     setRooms([
       ...rooms,
       {
         roomName: "",
         cost: 0,
-        lockedPrice: null, // Initialize locked price for regular rooms
-        lockedSquareFootPrice: null, // Initialize locked price for square footage rooms
+        lockedPrice: null,
+        lockedSquareFootPrice: null,
         squareFootage: 0,
       },
     ]);
@@ -208,20 +203,17 @@ const NewInvoice = () => {
     const updatedRooms = [...rooms];
     updatedRooms[index][field] = value;
 
-    // Lock the price for square footage rooms when the roomName is "Square Footage"
-    if (field === "roomName" && value === "Square Footage") {
       const sqftPrice =
         costOptions.find((opt) => opt.label === "Square Footage")?.value || 0;
       updatedRooms[index].lockedSquareFootPrice = sqftPrice; // Lock the price per sqft
-    }
+      updatedRooms[index].lockedSquareFootPrice = sqftPrice;
 
-    // Lock the price when the cost is selected for regular rooms
     if (field === "cost") {
       const selectedCost = costOptions.find(
         (option) => option.value === parseFloat(value)
       );
       if (selectedCost) {
-        updatedRooms[index].lockedPrice = selectedCost.value; // Lock the price
+        updatedRooms[index].lockedPrice = selectedCost.value;
       }
     }
 
@@ -229,33 +221,26 @@ const NewInvoice = () => {
   };
 
   // Update Extra
-  const updateExtra = (index, field, value) => {
     const updatedExtras = [...extras];
     updatedExtras[index][field] = value;
 
-    // Lock the cost if selected
     if (field === "cost") {
-      updatedExtras[index].lockedCost = parseFloat(value); // Lock the cost
+      updatedExtras[index].lockedCost = parseFloat(value);
     }
 
     setExtras(updatedExtras);
   };
 
-  // Remove Room/Extra
   const removeRoom = (index) => setRooms(rooms.filter((_, i) => i !== index));
   const removeExtra = (index) =>
     setExtras(extras.filter((_, i) => i !== index));
-
-  // Toggle Edit Prices
   const toggleEditPrices = () => setEditPrices(!editPrices);
 
-  // Save Prices
   const savePrices = () => {
-    localStorage.setItem("invoiceCostOptions", JSON.stringify(costOptions)); // Save prices under 'invoiceCostOptions'
+    localStorage.setItem("invoiceCostOptions", JSON.stringify(costOptions));
     setEditPrices(false);
     calculateTotal(); // Recalculate totals with updated prices
   };
-
   return (
     <div className="max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg">
       <header className="mb-6 flex justify-between items-center">
@@ -278,29 +263,29 @@ const NewInvoice = () => {
               <input
                 type="date"
                 id="date"
+                name="date"
                 className="border rounded w-full p-2"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 required
+                autoComplete="date"
               />
             </div>
             <div className="flex items-center space-x-2">
-              <div>
-                <label
-                  htmlFor="estimateNumber"
-                  className="block text-sm font-bold"
-                >
-                  Invoice Number:
-                </label>
-                <input
-                  type="text"
-                  id="estimateNumber"
-                  className="border rounded p-2 w-20"
-                  value={estimateNumber}
-                  onChange={(e) => setEstimateNumber(e.target.value)}
-                  required
-                />
-              </div>
+              <label htmlFor="estimateNumber" className="block text-sm font-bold">
+                Invoice Number:
+              </label>
+              <input
+                type="text"
+                id="estimateNumber"
+                name="estimateNumber"
+                className="border rounded p-2 w-20"
+                value={estimateNumber}
+                onChange={(e) => setEstimateNumber(e.target.value)}
+                required
+                autoComplete="off"
+              />
+            </div>
             </div>
           </section>
 
@@ -565,12 +550,16 @@ const NewInvoice = () => {
                       </option>
                     ))}
                   </select>
+                  <label htmlFor={`extraCost-${index}`}>Cost:</label>
                   <input
                     type="number"
+                    id={`extraCost-${index}`}
+                    name={`extraCost-${index}`}
                     className="border p-2 mb-2 w-full"
                     placeholder="Cost"
                     value={extra.cost}
                     onChange={(e) => updateExtra(index, "cost", e.target.value)}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => removeExtra(index)}

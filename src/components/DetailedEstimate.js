@@ -111,7 +111,7 @@ const extras = estimate.extras || []; // Array of extras
 
 const allItems = [...rooms, ...extras]; // Combine rooms and extras into one array
 
-allItems.forEach((item, i) => {
+allItems.forEach((item) => {
   if (gridY + 5 <= gridBoxY + gridBoxHeight) {
     // For rooms, set "Room" in the Items column, and for extras, set "Extra/Paint"
     const itemType = item.roomName === "Square Footage" ? "House" : item.roomName ? "Room" : "Extra/Paint";
@@ -148,7 +148,7 @@ allItems.forEach((item, i) => {
     // Split the description into lines if necessary
     const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
 
-    splitDescription.forEach((row, i) => {
+    splitDescription.forEach((row) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
         // Ensure text stays within the grid box
         if (row) {

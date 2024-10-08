@@ -197,8 +197,7 @@ const OpenJobs = () => {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-4">
-                  {/* Remove the Edit Job Button */}
-                  {/* Remove the Close Job Button */}
+
                   <button
                     className="bg-pink text-white p-2 rounded"
                     onClick={() => deleteJob(jobIndex)}
