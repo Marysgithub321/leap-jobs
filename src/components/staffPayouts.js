@@ -13,20 +13,23 @@ const StaffPayouts = () => {
     gst: false,
   });
   const [filterName, setFilterName] = useState("");
-  const [filterDate, setFilterDate] = useState(""); // Added date filter
+  const [filterDate, setFilterDate] = useState("");
 
   const navigate = useNavigate();
 
   // Load payments from localStorage when the component mounts
   useEffect(() => {
-    const savedPayments =
-      JSON.parse(localStorage.getItem("staffPayments")) || [];
-    setPayments(savedPayments);
+    const savedPayments = localStorage.getItem("staffPayments");
+    if (savedPayments) {
+      setPayments(JSON.parse(savedPayments));
+    }
   }, []);
 
   // Save payments to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("staffPayments", JSON.stringify(payments));
+    if (payments.length > 0) {
+      localStorage.setItem("staffPayments", JSON.stringify(payments));
+    }
   }, [payments]);
 
   // Handle form input changes
@@ -44,18 +47,23 @@ const StaffPayouts = () => {
       ...paymentForm,
       amount: parseFloat(paymentForm.amount),
       total: paymentForm.gst
-        ? parseFloat(paymentForm.amount) * 1.13 // Add 13% GST if applicable
+        ? parseFloat(paymentForm.amount) * 1.13
         : parseFloat(paymentForm.amount),
     };
     setPayments([...payments, newPayment]);
-    setShowForm(false); // Hide the form after adding the payment
+    setShowForm(false);
+    resetForm();
+  };
+
+  // Reset form fields
+  const resetForm = () => {
     setPaymentForm({
       date: "",
       name: "",
       description: "",
       amount: "",
       gst: false,
-    }); // Reset form
+    });
   };
 
   // Edit payment
@@ -63,14 +71,15 @@ const StaffPayouts = () => {
     const paymentToEdit = payments[index];
     setPaymentForm(paymentToEdit);
     deletePayment(index);
-    setShowForm(true); // Show the form for editing
+    setShowForm(true);
   };
 
   // Delete payment
-  const deletePayment = (index) => {
-    const updatedPayments = payments.filter((_, i) => i !== index);
-    setPayments(updatedPayments);
-  };
+const deletePayment = (index) => {
+  const updatedPayments = payments.filter((_, i) => i !== index);
+  setPayments(updatedPayments);
+  localStorage.setItem("staffPayments", JSON.stringify(updatedPayments));
+};
 
   // Filter payments by name and date
   const filteredPayments = payments.filter((payment) => {
@@ -79,7 +88,8 @@ const StaffPayouts = () => {
       .includes(filterName.toLowerCase());
     const matchesDate =
       filterDate === "" ||
-      new Date(payment.date).getFullYear() === parseInt(filterDate);
+      new Date(payment.date).getFullYear() === parseInt(filterDate, 10);
+
     return matchesName && matchesDate;
   });
 
@@ -97,26 +107,20 @@ const StaffPayouts = () => {
     });
 
     const fileName = filterName ? `${filterName}_payout.pdf` : "staff_payouts.pdf";
-doc.save(fileName);
-
+    doc.save(fileName);
   };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
       {/* Header with Home and Add Payment buttons */}
       <header className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Staff Payouts</h1>
-        </div>
-        <div className="flex space-x-4">
-          {/* Home button */}
-          <button
-            className="bg-green text-white p-2 rounded"
-            onClick={() => navigate("/")}
-          >
-            Home
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold">Staff Payouts</h1>
+        <button
+          className="bg-green text-white p-2 rounded"
+          onClick={() => navigate("/")}
+        >
+          Home
+        </button>
       </header>
 
       {/* Filter Section */}
@@ -131,6 +135,7 @@ doc.save(fileName);
           onChange={(e) => setFilterName(e.target.value)}
           className="border rounded p-2 w-full"
           placeholder="Enter contractor name..."
+          autoComplete="off"
         />
       </div>
 
@@ -145,19 +150,21 @@ doc.save(fileName);
           onChange={(e) => setFilterDate(e.target.value)}
           className="border rounded p-2 w-full"
           placeholder="Enter year..."
+          autoComplete="off"
         />
       </div>
 
       {/* Print Button */}
       <button
-        className="bg-blue text-white p-2 rounded mb-4 mr-4"
+        className="bg-darkBlue text-white p-2 rounded mb-4 mr-4"
         onClick={handlePrintPayouts}
       >
         Print List
       </button>
+
       {/* Add Payment button */}
       <button
-        className="bg-darkBlue text-white p-2 rounded mt-4 mb-4"
+        className="bg-blue text-white p-2 rounded mb-4"
         onClick={() => setShowForm(!showForm)}
       >
         {showForm ? "Cancel" : "Add Payment"}
@@ -177,6 +184,7 @@ doc.save(fileName);
               value={paymentForm.date}
               onChange={handleChange}
               className="border rounded p-2 w-full"
+              autoComplete="off"
             />
           </div>
           <div className="mb-4">
@@ -190,6 +198,7 @@ doc.save(fileName);
               value={paymentForm.name}
               onChange={handleChange}
               className="border rounded p-2 w-full"
+              autoComplete="name"
             />
           </div>
           <div className="mb-4">
@@ -203,6 +212,7 @@ doc.save(fileName);
               value={paymentForm.description}
               onChange={handleChange}
               className="border rounded p-2 w-full"
+              autoComplete="off"
             />
           </div>
           <div className="mb-4">
@@ -216,12 +226,14 @@ doc.save(fileName);
               value={paymentForm.amount}
               onChange={handleChange}
               className="border rounded p-2 w-full"
+              autoComplete="off"
             />
           </div>
           <div className="mb-4">
             <label className="block font-bold mb-2">
               <input
                 type="checkbox"
+                id="gst"
                 name="gst"
                 checked={paymentForm.gst}
                 onChange={handleChange}
@@ -231,7 +243,7 @@ doc.save(fileName);
             </label>
           </div>
           <button
-            className="bg-green text-white p-2 rounded"
+            className="bg-darkBlue text-white p-2 rounded"
             onClick={addPayment}
           >
             Add Payment

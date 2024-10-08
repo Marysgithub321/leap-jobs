@@ -12,17 +12,22 @@ const Expenses = () => {
     amount: "",
     receipt: null,
   });
-  const [filterJobNumber, setFilterJobNumber] = useState(""); // Only filter by job number
+  const [editIndex, setEditIndex] = useState(null);
+  const [filterJobNumber, setFilterJobNumber] = useState("");
 
-  // Load all expenses from localStorage on mount
+  // Load expenses from localStorage on mount
   useEffect(() => {
-    const savedExpenses = JSON.parse(localStorage.getItem("directExpenses")) || [];
-    setExpenses(savedExpenses);
+    const savedExpenses = localStorage.getItem("directExpenses");
+    if (savedExpenses) {
+      setExpenses(JSON.parse(savedExpenses));
+    }
   }, []);
 
   // Save expenses to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem("directExpenses", JSON.stringify(expenses));
+    if (expenses.length > 0) {
+      localStorage.setItem("directExpenses", JSON.stringify(expenses));
+    }
   }, [expenses]);
 
   // Handle form input changes
@@ -41,7 +46,7 @@ const Expenses = () => {
     reader.onloadend = () => {
       setNewExpense((prev) => ({
         ...prev,
-        receipt: reader.result, // Save the file as Base64 string
+        receipt: reader.result,
       }));
     };
     if (file) {
@@ -49,17 +54,31 @@ const Expenses = () => {
     }
   };
 
-  // Add new expense
-  const addExpense = () => {
+  // Add or update expense
+  const saveExpense = () => {
     const newExpenseEntry = {
       ...newExpense,
       amount: parseFloat(newExpense.amount),
     };
 
-    setExpenses([...expenses, newExpenseEntry]);
-    setShowForm(false); // Hide form after adding expense
+    if (editIndex !== null) {
+      // Update existing expense
+      const updatedExpenses = expenses.map((expense, index) =>
+        index === editIndex ? newExpenseEntry : expense
+      );
+      setExpenses(updatedExpenses);
+      setEditIndex(null);
+    } else {
+      // Add new expense
+      setExpenses([...expenses, newExpenseEntry]);
+    }
 
-    // Reset form
+    setShowForm(false);
+    resetForm();
+  };
+
+  // Reset form fields
+  const resetForm = () => {
     setNewExpense({
       jobNumber: "",
       description: "",
@@ -70,22 +89,23 @@ const Expenses = () => {
 
   // Edit expense
   const editExpense = (index) => {
-    const expenseToEdit = expenses[index];
-    setNewExpense(expenseToEdit);
-    deleteExpense(index);
-    setShowForm(true); // Show form for editing
+    setNewExpense(expenses[index]);
+    setEditIndex(index);
+    setShowForm(true);
   };
 
-  // Delete expense
-  const deleteExpense = (index) => {
-    const updatedExpenses = expenses.filter((_, i) => i !== index);
-    setExpenses(updatedExpenses);
-  };
+ // Delete expense
+const deleteExpense = (index) => {
+  const updatedExpenses = expenses.filter((_, i) => i !== index);
+  setExpenses(updatedExpenses);
+  localStorage.setItem("directExpenses", JSON.stringify(updatedExpenses));
+};
 
-  // Filter expenses by job number only
-  const filteredExpenses = expenses.filter((expense) => {
-    return expense.jobNumber.toLowerCase().includes(filterJobNumber.toLowerCase());
-  });
+
+  // Filter expenses by job number
+  const filteredExpenses = expenses.filter((expense) =>
+    expense.jobNumber.toLowerCase().includes(filterJobNumber.toLowerCase())
+  );
 
   // Generate PDF
   const handlePrintExpenses = () => {
@@ -94,7 +114,9 @@ const Expenses = () => {
     doc.text("Expense Report", 10, 10);
 
     filteredExpenses.forEach((expense, index) => {
-      const line = `Job #${expense.jobNumber} | ${expense.description} | $${expense.amount.toFixed(2)}`;
+      const line = `Job #${expense.jobNumber} | ${
+        expense.description
+      } | $${expense.amount.toFixed(2)}`;
       doc.text(line, 10, 20 + index * 10);
     });
 
@@ -103,23 +125,16 @@ const Expenses = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* Header with Home and Add Expense buttons */}
       <header className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Expenses</h1>
-        </div>
-        <div className="flex space-x-4">
-          {/* Home button */}
-          <button
-            className="bg-green text-white p-2 rounded"
-            onClick={() => navigate("/")}
-          >
-            Home
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold">Expenses</h1>
+        <button
+          className="bg-green text-white p-2 rounded"
+          onClick={() => navigate("/")}
+        >
+          Home
+        </button>
       </header>
 
-      {/* Filter Section */}
       <div className="mb-4">
         <label htmlFor="filterJobNumber" className="block font-bold mb-2">
           Filter by Job Number:
@@ -134,23 +149,19 @@ const Expenses = () => {
         />
       </div>
 
-      {/* Print Button */}
       <button
-        className="bg-blue text-white p-2 rounded mb-4 mr-4"
+        className="bg-darkBlue text-white p-2 rounded mb-4 mr-4"
         onClick={handlePrintExpenses}
       >
-        Download Expense Report (PDF)
+        Print List
       </button>
-
-      {/* Add Expense button */}
       <button
-        className="bg-darkBlue text-white p-2 rounded mt-4 mb-4"
+        className="bg-blue text-white p-2 rounded mt-4 mb-4"
         onClick={() => setShowForm(!showForm)}
       >
         {showForm ? "Cancel" : "Add Expense"}
       </button>
 
-      {/* Expense Form */}
       {showForm && (
         <div className="mb-6 p-4 bg-gray-100 rounded-lg shadow">
           <div className="mb-4">
@@ -204,16 +215,12 @@ const Expenses = () => {
               className="border rounded p-2 w-full"
             />
           </div>
-          <button
-            className="bg-green text-white p-2 rounded"
-            onClick={addExpense}
-          >
-            Save Expense
+          <button className="bg-darkBlue text-white p-2 rounded" onClick={saveExpense}>
+            {editIndex !== null ? "Update Expense" : "Save Expense"}
           </button>
         </div>
       )}
 
-      {/* Expenses List */}
       <div className="bg-white p-4 rounded-lg shadow">
         {filteredExpenses.length > 0 ? (
           filteredExpenses.map((expense, index) => (
@@ -239,7 +246,6 @@ const Expenses = () => {
                   </button>
                 </div>
               </div>
-              {/* Display the uploaded receipt image */}
               {expense.receipt && (
                 <div className="mt-2">
                   <p>Receipt:</p>

@@ -111,7 +111,12 @@ export const generateInvoicePDF = (invoice) => {
     const verticalLineX = 40; // X position for the vertical line
     const verticalLineYStart = gridBoxY; // Start at the top of the grid
     const verticalLineYEnd = gridBoxY + gridBoxHeight; // End at the bottom of the grid
-    doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd); // Draw the vertical line
+    doc.line(
+      verticalLineX,
+      verticalLineYStart,
+      verticalLineX,
+      verticalLineYEnd
+    ); // Draw the vertical line
 
     // Render the grid data (Description)
     const finalDescription =
@@ -121,9 +126,12 @@ export const generateInvoicePDF = (invoice) => {
 
     // Split the description into multiple lines with a maximum of 50 characters per line
     const maxLineWidth = 70;
-    const splitDescription = doc.splitTextToSize(finalDescription, maxLineWidth); // Split the description
+    const splitDescription = doc.splitTextToSize(
+      finalDescription,
+      maxLineWidth
+    ); // Split the description
 
-    splitDescription.forEach((row, i) => {
+    splitDescription.forEach((row) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
         // Ensure text stays within the grid box
         if (row) {
@@ -132,7 +140,7 @@ export const generateInvoicePDF = (invoice) => {
         gridY += 5; // Increase the Y position for each row
       }
     });
-    
+
     // Totals Box (Fixed Position 15 units below the grid)
     const totalsBoxX = 150;
     const totalsBoxY = gridBoxY + gridBoxHeight + 5; // 15 units below the grid box
@@ -145,11 +153,7 @@ export const generateInvoicePDF = (invoice) => {
 
     doc.setFont("helvetica", "bold");
     doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
-    doc.text(
-      "GST/HST:",
-      totalsBoxX + 2,
-      totalsBoxY + totalsLineHeight * 2 - 2
-    );
+    doc.text("GST/HST:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 2 - 2);
     doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
 
     // Add lines between the subtotal, GST/HST, and total

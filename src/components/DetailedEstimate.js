@@ -16,7 +16,14 @@ export const generateDetailedPDF = (estimate) => {
   logoImage.onload = () => {
     // Add the logo image and wait for it to load
     const imgProps = { x: 18, y: 10, width: 100, height: 60 };
-    doc.addImage(logoImage, "PNG", imgProps.x, imgProps.y, imgProps.width, imgProps.height);
+    doc.addImage(
+      logoImage,
+      "PNG",
+      imgProps.x,
+      imgProps.y,
+      imgProps.width,
+      imgProps.height
+    );
 
     // Company Information Box
     doc.setFontSize(10);
@@ -43,7 +50,7 @@ export const generateDetailedPDF = (estimate) => {
     // Title (Estimate)
     doc.setFontSize(16);
     doc.setFont("helvetica", "bold");
-    doc.text("Detailed Estimate", 172, 20, null, null, "center");
+    doc.text("Estimate", 172, 20, null, null, "center");
 
     // Date and Estimate Number Box under the title
     doc.setFontSize(12);
@@ -51,7 +58,7 @@ export const generateDetailedPDF = (estimate) => {
     doc.text(`Date: ${estimate.date || "N/A"}`, 157, 27);
     doc.text(`Estimate # ${estimate.estimateNumber || "N/A"}`, 157, 35);
     doc.line(155, 30, 195, 30); // Line between Date and Estimate Number
-    doc.rect(155, 22, 40, 15);  // Box around Date and Estimate Number
+    doc.rect(155, 22, 40, 15); // Box around Date and Estimate Number
 
     // Customer Information
     const customerInfoLabel = "Name / Address:";
@@ -102,41 +109,57 @@ export const generateDetailedPDF = (estimate) => {
     const verticalLineXRight = 168; // Before "Total"
     const verticalLineYStart = gridBoxY;
     const verticalLineYEnd = gridBoxY + gridBoxHeight;
-    doc.line(verticalLineX, verticalLineYStart, verticalLineX, verticalLineYEnd);
-    doc.line(verticalLineXRight, verticalLineYStart, verticalLineXRight, verticalLineYEnd); // Before the Total column
+    doc.line(
+      verticalLineX,
+      verticalLineYStart,
+      verticalLineX,
+      verticalLineYEnd
+    );
+    doc.line(
+      verticalLineXRight,
+      verticalLineYStart,
+      verticalLineXRight,
+      verticalLineYEnd
+    ); // Before the Total column
 
     // Detailed Estimate Data (Rooms and Extras)
-const rooms = estimate.rooms || []; // Array of rooms
-const extras = estimate.extras || []; // Array of extras
+    const rooms = estimate.rooms || []; // Array of rooms
+    const extras = estimate.extras || []; // Array of extras
 
-const allItems = [...rooms, ...extras]; // Combine rooms and extras into one array
+    const allItems = [...rooms, ...extras]; // Combine rooms and extras into one array
 
-allItems.forEach((item) => {
-  if (gridY + 5 <= gridBoxY + gridBoxHeight) {
-    // For rooms, set "Room" in the Items column, and for extras, set "Extra/Paint"
-    const itemType = item.roomName === "Square Footage" ? "House" : item.roomName ? "Room" : "Extra/Paint";
-    doc.text(itemType, headerX[0], gridY); // Items column
+    allItems.forEach((item) => {
+      if (gridY + 5 <= gridBoxY + gridBoxHeight) {
+        // For rooms, set "Room" in the Items column, and for extras, set "Extra/Paint"
+        const itemType =
+          item.roomName === "Square Footage"
+            ? "House"
+            : item.roomName
+            ? "Room"
+            : "Extra/Paint";
+        doc.text(itemType, headerX[0], gridY); // Items column
 
-    // Handle the description (either room name or extra type)
-    let description = item.roomName
-      ? item.customRoomName || item.roomName // For rooms, show room name
-      : item.customType || item.type; // For extras, show custom type or selected type
+        // Handle the description (either room name or extra type)
+        let description = item.roomName
+          ? item.customRoomName || item.roomName // For rooms, show room name
+          : item.customType || item.type; // For extras, show custom type or selected type
 
-    doc.text(description || "N/A", headerX[1], gridY); // Description column
+        doc.text(description || "N/A", headerX[1], gridY); // Description column
 
-    // If it's Square Footage, show the entered square footage in the total column
-    if (item.roomName === "Square Footage") {
-      const squareFootage = item.squareFootage || "N/A";
-      doc.text(squareFootage.toString(), headerX[2], gridY); // Display entered square footage
-    } else {
-      const itemCost = item.cost ? formatCurrency(item.cost) : formatCurrency(0);
-      doc.text(itemCost, headerX[2], gridY); // Total column for other rooms
-    }
+        // If it's Square Footage, show the entered square footage in the total column
+        if (item.roomName === "Square Footage") {
+          const squareFootage = item.squareFootage || "N/A";
+          doc.text(squareFootage.toString(), headerX[2], gridY); // Display entered square footage
+        } else {
+          const itemCost = item.cost
+            ? formatCurrency(item.cost)
+            : formatCurrency(0);
+          doc.text(itemCost, headerX[2], gridY); // Total column for other rooms
+        }
 
-    gridY += 5; // Move to the next row
-  }
-});
-
+        gridY += 5; // Move to the next row
+      }
+    });
 
     // Render the description only once at the end of the grid
     const finalDescription =
@@ -144,7 +167,7 @@ allItems.forEach((item) => {
         ? estimate.customDescription
         : estimate.description;
 
-        gridY += 5; 
+    gridY += 5;
     // Split the description into lines if necessary
     const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
 
@@ -157,7 +180,6 @@ allItems.forEach((item) => {
         gridY += 5; // Increase the Y position for each row
       }
     });
-    
 
     // Totals Box (Fixed Position 15 units below the grid)
     const totalsBoxX = 150;
@@ -171,11 +193,7 @@ allItems.forEach((item) => {
 
     doc.setFont("helvetica", "bold");
     doc.text("Subtotal:", totalsBoxX + 2, totalsBoxY + totalsLineHeight - 2);
-    doc.text(
-      "GST/HST:",
-      totalsBoxX + 2,
-      totalsBoxY + totalsLineHeight * 2 - 2
-    );
+    doc.text("GST/HST:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 2 - 2);
     doc.text("Total:", totalsBoxX + 2, totalsBoxY + totalsLineHeight * 3 - 2);
 
     // Add lines between the subtotal, GST/HST, and total

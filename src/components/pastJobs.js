@@ -44,7 +44,8 @@ const PastJobs = () => {
     }
 
     // Add the job as an invoice if it doesn't exist
-    const defaultInvoiceDescription = "Thank you for your business! Payment due upon receipt.";
+    const defaultInvoiceDescription =
+      "Thank you for your business! Payment due upon receipt.";
 
     // Modify the job's description for the invoice
     const invoice = {
@@ -78,7 +79,7 @@ const PastJobs = () => {
             <div className="flex justify-between mb-2 font-semibold text-gray-700">
               <span>Job #{job.estimateNumber}</span>
               <span>{job.customerName}</span>
-              <span>{job.date}</span>
+              
               <button
                 className="bg-darkBlue text-white p-2 rounded"
                 onClick={() => toggleJobVisibility(jobIndex)}
@@ -100,7 +101,8 @@ const PastJobs = () => {
                   <h3 className="font-semibold">Rooms</h3>
                   {job.rooms &&
                     job.rooms.map((room, roomIndex) => {
-                      const isSquareFootage = room.roomName === "Square Footage";
+                      const isSquareFootage =
+                        room.roomName === "Square Footage";
                       const squareFootagePrice =
                         job.costOptions?.find(
                           (option) => option.label === "Square Footage"

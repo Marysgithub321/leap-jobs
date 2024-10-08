@@ -51,16 +51,18 @@ const EstimateCalculator = () => {
   ];
 
   const [costOptions, setCostOptions] = useState(() => {
-    const savedCostOptions = JSON.parse(localStorage.getItem("estimateCostOptions")) || [];
+    const savedCostOptions =
+      JSON.parse(localStorage.getItem("estimateCostOptions")) || [];
     const mergedOptions = [...defaultCostOptions];
 
-    // Merge saved options with default options
     savedCostOptions.forEach((savedOption) => {
-      const index = mergedOptions.findIndex((opt) => opt.label === savedOption.label);
+      const index = mergedOptions.findIndex(
+        (opt) => opt.label === savedOption.label
+      );
       if (index !== -1) {
-        mergedOptions[index].value = savedOption.value; // Update existing options
+        mergedOptions[index].value = savedOption.value;
       } else {
-        mergedOptions.push(savedOption); // Add new options
+        mergedOptions.push(savedOption);
       }
     });
 
@@ -211,7 +213,7 @@ const EstimateCalculator = () => {
   };
 
   const saveEstimate = () => {
-    const gstHst = total * 0.13; // 13% GST/HST calculation
+    const gstHst = total * 0.13;
 
     const updatedEstimate = {
       customerName,
@@ -221,11 +223,11 @@ const EstimateCalculator = () => {
       phoneNumber,
       rooms,
       extras,
-      subtotal: total, // Save the calculated subtotal
-      gstHst, // Save the calculated GST/HST
-      total: total + gstHst, // Total including GST/HST
-      description, // Save the selected description
-      customDescription, // Save the custom description if entered
+      subtotal: total,
+      gstHst,
+      total: total + gstHst,
+      description,
+      customDescription,
     };
 
     const estimates = JSON.parse(localStorage.getItem("estimates")) || [];
@@ -248,7 +250,7 @@ const EstimateCalculator = () => {
     "This estimate is valid for 10 days and includes labor for the agreed-upon scope of work. Any additional tasks or materials not mentioned will result in extra costs. Feel free to contact me with questions.",
     "Includes all the labor, paint is extra.",
     "Includes both labor and paint.",
-    "Other" // Custom option
+    "Other",
   ];
 
   const truncateText = (text, maxLength) => {
@@ -260,7 +262,6 @@ const EstimateCalculator = () => {
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white shadow-lg rounded-lg">
-      {/* Header with Home Button */}
       <header className="mb-6 flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
           Paint Job Estimator
@@ -305,8 +306,9 @@ const EstimateCalculator = () => {
                   name="estimateNumber"
                   className="border rounded p-2 w-20"
                   value={estimateNumber}
-                  onChange={(e) => setEstimateNumber(e.target.value)} // Allow manual override
+                  onChange={(e) => setEstimateNumber(e.target.value)}
                   required
+                  autoComplete="estimate-number"
                 />
               </div>
             </div>
@@ -330,6 +332,7 @@ const EstimateCalculator = () => {
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   required
+                  autoComplete="name"
                 />
               </div>
               <div>
@@ -347,6 +350,7 @@ const EstimateCalculator = () => {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   required
+                  autoComplete="tel"
                 />
               </div>
               <div>
@@ -367,7 +371,6 @@ const EstimateCalculator = () => {
             </section>
           </div>
 
-          {/* Buttons for Adding Sections */}
           <div className="mb-4 flex flex-wrap gap-2">
             <button
               className="bg-darkBlue text-white p-2 rounded w-full sm:w-auto"
@@ -390,7 +393,6 @@ const EstimateCalculator = () => {
             </button>
           </div>
 
-          {/* Edit Prices Section */}
           {editPrices && (
             <div className="bg-gray-100 p-4 rounded-lg mb-4">
               <h3 className="text-lg font-bold mb-2">Edit Room Prices</h3>
@@ -403,17 +405,19 @@ const EstimateCalculator = () => {
                     {option.label}:
                   </label>
                   <input
-                    type="text" // Use text to allow an empty value
-                    value={option.value === 0 ? "" : option.value} // Show empty if value is 0
+                    type="text"
+                    id={`costOption-${index}`}
+                    name={`costOption-${index}`}
+                    value={option.value === 0 ? "" : option.value}
                     onChange={(e) => {
                       const newValue =
-                        e.target.value === "" ? "" : parseFloat(e.target.value); // Allow empty string
+                        e.target.value === "" ? "" : parseFloat(e.target.value);
                       const updatedOptions = costOptions.map((item, i) =>
                         i === index
                           ? { ...item, value: isNaN(newValue) ? "" : newValue }
                           : item
                       );
-                      setCostOptions(updatedOptions); // Update state immutably
+                      setCostOptions(updatedOptions);
                     }}
                     className="border rounded w-full p-2"
                   />
@@ -429,10 +433,16 @@ const EstimateCalculator = () => {
             </div>
           )}
 
-          {/* Description Section */}
           <div className="mb-4">
-            <label className="block text-sm font-bold mb-2">Description:</label>
+            <label
+              htmlFor="description"
+              className="block text-sm font-bold mb-2"
+            >
+              Description:
+            </label>
             <select
+              id="description"
+              name="description"
               className="border p-2 w-full mb-2"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -440,33 +450,33 @@ const EstimateCalculator = () => {
               <option value="">Select Description</option>
               {descriptionOptions.map((option, index) => (
                 <option key={index} value={option}>
-                  {truncateText(option, 70)} {/* Truncate to 70 characters */}
+                  {truncateText(option, 70)}
                 </option>
               ))}
             </select>
 
-            {/* Display full description below */}
             {description && description !== "Other" && (
               <div className="mt-2 p-2 bg-gray-100 rounded">
                 <p style={{ whiteSpace: "pre-wrap", wordWrap: "break-word" }}>
-                  {description} {/* This will display the full selected description */}
+                  {description}
                 </p>
               </div>
             )}
 
-            {/* Display custom input if 'Other' is selected */}
             {description === "Other" && (
               <input
                 type="text"
+                id="customDescription"
+                name="customDescription"
                 className="border p-2 mb-2 w-full"
                 placeholder="Enter custom description"
                 value={customDescription}
                 onChange={(e) => setCustomDescription(e.target.value)}
+                autoComplete="off"
               />
             )}
           </div>
 
-          {/* Display added Rooms, Extras, and Paints */}
           {rooms.length > 0 && (
             <>
               <h3 className="font-bold mb-2">Rooms</h3>
@@ -475,17 +485,25 @@ const EstimateCalculator = () => {
                   key={index}
                   className="section-bordered p-4 bg-white rounded-lg shadow-sm mb-4"
                 >
+                  <label
+                    htmlFor={`roomName-${index}`}
+                    className="block text-sm font-bold"
+                  >
+                    Room Name:
+                  </label>
                   <select
+                    id={`roomName-${index}`}
+                    name={`roomName-${index}`}
                     className="border p-2 mb-2 w-full"
                     value={room.roomName}
                     onChange={(e) => {
                       const value = e.target.value;
                       updateRoom(index, "roomName", value);
                       if (value === "Square Footage") {
-                        updateRoom(index, "squareFootage", 0); // Reset square footage
-                        updateRoom(index, "cost", 3); // Set default cost per square foot
+                        updateRoom(index, "squareFootage", 0);
+                        updateRoom(index, "cost", 3);
                       } else {
-                        updateRoom(index, "cost", 0); // Reset cost for non-square footage rooms
+                        updateRoom(index, "cost", 0);
                       }
                     }}
                   >
@@ -497,27 +515,37 @@ const EstimateCalculator = () => {
                     ))}
                   </select>
 
-                  {/* Square Footage Input and Cost Input for Square Footage Rooms */}
                   {room.roomName === "Square Footage" && (
                     <>
                       <div>
-                        <label htmlFor="squareFootage">
+                        <label
+                          htmlFor={`squareFootage-${index}`}
+                          className="block text-sm font-bold"
+                        >
                           Enter Square Footage:
                         </label>
                         <input
                           type="number"
+                          id={`squareFootage-${index}`}
+                          name={`squareFootage-${index}`}
                           className="border p-2 mb-2 w-full"
                           value={room.squareFootage}
                           onChange={(e) =>
                             updateRoom(index, "squareFootage", e.target.value)
                           }
+                          autoComplete="off"
                         />
                       </div>
                       <div>
-                        <label htmlFor="cost">
+                        <label
+                          htmlFor={`cost-${index}`}
+                          className="block text-sm font-bold"
+                        >
                           Select Cost per Square Foot:
                         </label>
                         <select
+                          id={`cost-${index}`}
+                          name={`cost-${index}`}
                           className="border p-2 mb-2 w-full"
                           value={room.lockedSquareFootPrice || room.cost}
                           onChange={(e) => {
@@ -527,8 +555,8 @@ const EstimateCalculator = () => {
                               index,
                               "lockedSquareFootPrice",
                               selectedCost
-                            ); // Update the locked cost when user selects a different cost
-                            calculateTotal(); // Recalculate totals
+                            );
+                            calculateTotal();
                           }}
                         >
                           <option value="">Select Cost</option>
@@ -543,25 +571,33 @@ const EstimateCalculator = () => {
                   )}
 
                   {room.roomName !== "Square Footage" && (
-                    <select
+                    <>
+                      <label
+                        htmlFor={`cost-${index}`}
+                        className="block text-sm font-bold"
+                      >
+                        Select Cost:
+                      </label>
+                      <select
                         id={`cost-${index}`}
                         name={`cost-${index}`}
-                      className="border p-2 mb-2 w-full"
-                      value={room.lockedPrice || room.cost}
-                      onChange={(e) => {
-                        const selectedCost = parseFloat(e.target.value);
-                        updateRoom(index, "cost", selectedCost);
-                        updateRoom(index, "lockedPrice", selectedCost); // Update the locked price when user selects a different cost
-                        calculateTotal(); // Recalculate totals
-                      }}
-                    >
-                      <option value="">Select Cost</option>
-                      {costOptions.map((option, i) => (
-                        <option key={i} value={option.value}>
-                          {option.label} - ${option.value}
-                        </option>
-                      ))}
-                    </select>
+                        className="border p-2 mb-2 w-full"
+                        value={room.lockedPrice || room.cost}
+                        onChange={(e) => {
+                          const selectedCost = parseFloat(e.target.value);
+                          updateRoom(index, "cost", selectedCost);
+                          updateRoom(index, "lockedPrice", selectedCost);
+                          calculateTotal();
+                        }}
+                      >
+                        <option value="">Select Cost</option>
+                        {costOptions.map((option, i) => (
+                          <option key={i} value={option.value}>
+                            {option.label} - ${option.value}
+                          </option>
+                        ))}
+                      </select>
+                    </>
                   )}
 
                   <button
@@ -583,7 +619,15 @@ const EstimateCalculator = () => {
                   key={index}
                   className="section-bordered p-4 bg-white rounded-lg shadow-sm mb-4"
                 >
+                  <label
+                    htmlFor={`extraType-${index}`}
+                    className="block text-sm font-bold"
+                  >
+                    Extra Type:
+                  </label>
                   <select
+                    id={`extraType-${index}`}
+                    name={`extraType-${index}`}
                     className="border p-2 mb-2 w-full"
                     value={extra.type}
                     onChange={(e) => {
@@ -602,22 +646,38 @@ const EstimateCalculator = () => {
                     ))}
                   </select>
 
-                  {/* Custom Extra Type Input */}
                   {extra.type === "Other" && (
-                    <input
-                      type="text"
-                      className="border p-2 mb-2 w-full"
-                      placeholder="Enter custom extra"
-                      value={extra.customType}
-                      onChange={(e) =>
-                        updateExtra(index, "customType", e.target.value)
-                      }
-                    />
+                    <>
+                      <label
+                        htmlFor={`customType-${index}`}
+                        className="block text-sm font-bold"
+                      >
+                        Custom Extra:
+                      </label>
+                      <input
+                        type="text"
+                        id={`customType-${index}`}
+                        name={`customType-${index}`}
+                        className="border p-2 mb-2 w-full"
+                        placeholder="Enter custom extra"
+                        value={extra.customType}
+                        onChange={(e) =>
+                          updateExtra(index, "customType", e.target.value)
+                        }
+                      />
+                    </>
                   )}
 
-                  {/* Manually enter cost */}
+                  <label
+                    htmlFor={`extraCost-${index}`}
+                    className="block text-sm font-bold"
+                  >
+                    Cost:
+                  </label>
                   <input
                     type="number"
+                    id={`extraCost-${index}`}
+                    name={`extraCost-${index}`}
                     className="border p-2 mb-2 w-full"
                     placeholder="Cost"
                     value={extra.cost}
@@ -635,7 +695,6 @@ const EstimateCalculator = () => {
             </>
           )}
 
-          {/* Subtotals and Totals */}
           <div className="section-bordered border-t mt-4 pt-4">
             <div className="flex justify-between">
               <p>Subtotal:</p>
@@ -651,7 +710,6 @@ const EstimateCalculator = () => {
             </div>
           </div>
 
-          {/* Save Estimate Button */}
           <div className="flex flex-wrap gap-4 mt-4">
             <button
               className="bg-green text-white p-2 w-full sm:w-auto rounded"

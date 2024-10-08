@@ -13,12 +13,24 @@ const Dashboard = () => {
   const cards = [
     { name: "Estimates", icon: "/icons/estimate.png", link: "/estimates" },
     { name: "Invoices", icon: "/icons/invoice.png", link: "/invoices" },
-    { name: "New Estimate", icon: "/icons/calculator.png", link: "/estimate-calculator" },
+    {
+      name: "New Estimate",
+      icon: "/icons/calculator.png",
+      link: "/estimate-calculator",
+    },
     { name: "New Invoice", icon: "/icons/addjob.png", link: "/new-invoice" },
-    { name: "Receipts/Expenses", icon: "/icons/expenses.png", link: "/expenses" },
+    {
+      name: "Receipts/Expenses",
+      icon: "/icons/expenses.png",
+      link: "/expenses",
+    },
     { name: "Open Jobs", icon: "/icons/openjob.png", link: "/open-jobs" },
     { name: "Closed Jobs", icon: "/icons/pastjobs.png", link: "/past-jobs" },
-    { name: "Contractor Payouts", icon: "/icons/payday.png", link: "/contractor-payouts" },
+    {
+      name: "Contractor Payouts",
+      icon: "/icons/payday.png",
+      link: "/contractor-payouts",
+    },
   ];
 
   return (
@@ -53,7 +65,9 @@ const Dashboard = () => {
             className="bg-white shadow-md rounded-lg p-6 flex flex-col items-center justify-center"
             style={{ minWidth: "150px", height: "150px", flexGrow: 1 }}
             data-aos="zoom-in"
-            onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.1)")}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "scale(1.1)")
+            }
             onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
           >
             <img

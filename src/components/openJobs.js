@@ -11,10 +11,12 @@ const OpenJobs = () => {
   useEffect(() => {
     const savedOpenJobs = JSON.parse(localStorage.getItem("openJobs")) || [];
     setOpenJobs(savedOpenJobs);
-    
+
     // Initialize showJobDetails and showProgressDropdown after loading jobs
     setShowJobDetails(savedOpenJobs.map(() => false));
-    setShowProgressDropdown(savedOpenJobs.map((job) => job.rooms.map(() => false)));
+    setShowProgressDropdown(
+      savedOpenJobs.map((job) => job.rooms.map(() => false))
+    );
   }, []);
 
   // Save jobs to localStorage
@@ -50,7 +52,7 @@ const OpenJobs = () => {
   // Function to update room notes
   const updateRoomNote = (jobIndex, roomIndex, value) => {
     const updatedJobs = [...openJobs];
-    updatedJobs[jobIndex].rooms[roomIndex].note = value;
+    updatedJobs[jobIndex].rooms[roomIndex].note = value || "";
     saveJobs(updatedJobs);
   };
 
@@ -144,7 +146,9 @@ const OpenJobs = () => {
                       {/* Dropdown Button for Progress */}
                       <button
                         className="bg-darkBlue text-white p-2 rounded mb-2"
-                        onClick={() => toggleProgressDropdown(jobIndex, roomIndex)}
+                        onClick={() =>
+                          toggleProgressDropdown(jobIndex, roomIndex)
+                        }
                       >
                         {showProgressDropdown[jobIndex][roomIndex]
                           ? "Hide Progress"
@@ -162,6 +166,7 @@ const OpenJobs = () => {
                               <input
                                 type="checkbox"
                                 id={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
+                                name={`progress-${jobIndex}-${roomIndex}-${optionIndex}`}
                                 checked={room.progress?.includes(option)}
                                 onChange={() =>
                                   updateRoomProgress(
@@ -184,12 +189,15 @@ const OpenJobs = () => {
 
                       {/* Room Note */}
                       <textarea
+                        id={`note-${jobIndex}-${roomIndex}`}
+                        name={`note-${jobIndex}-${roomIndex}`}
                         className="border p-2 w-full"
                         placeholder="Add note for this room"
                         value={room.note || ""}
                         onChange={(e) =>
                           updateRoomNote(jobIndex, roomIndex, e.target.value)
                         }
+                        autoComplete="off"
                       />
                     </div>
                   ))}
@@ -197,7 +205,6 @@ const OpenJobs = () => {
 
                 {/* Action Buttons */}
                 <div className="flex space-x-4">
-
                   <button
                     className="bg-pink text-white p-2 rounded"
                     onClick={() => deleteJob(jobIndex)}

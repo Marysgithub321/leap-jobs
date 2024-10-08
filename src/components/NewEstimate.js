@@ -26,7 +26,14 @@ export const generateEstimatePDF = (estimate) => {
     // Add the logo to the PDF if it's loaded successfully
     if (logoBase64) {
       const imgProps = { x: 10, y: 5, width: 50, height: 30 };
-      doc.addImage(logoBase64, "PNG", imgProps.x, imgProps.y, imgProps.width, imgProps.height);
+      doc.addImage(
+        logoBase64,
+        "PNG",
+        imgProps.x,
+        imgProps.y,
+        imgProps.width,
+        imgProps.height
+      );
     }
 
     // Continue generating PDF content
@@ -42,7 +49,7 @@ const generatePDFContent = (doc, estimate) => {
   doc.setFontSize(12);
 
   // Add content to PDF
-  doc.text("Estimate Details", 10, 50);  // Start the text below the logo
+  doc.text("Estimate Details", 10, 50); // Start the text below the logo
   doc.text(`Customer Name: ${estimate.customerName}`, 10, 60);
   doc.text(`Job Number: ${estimate.jobNumber}`, 10, 70);
   doc.text(`Date: ${estimate.date}`, 10, 80);

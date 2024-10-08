@@ -128,7 +128,7 @@ export const generateDetailedInvoicePDF = (invoice) => {
 
     const allItems = [...rooms, ...extras]; // Combine rooms and extras into one array
 
-    allItems.forEach((item, i) => {
+    allItems.forEach((item) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
         // If it's Square Footage, show "House" instead of "Room" in Items column
         const itemType =
@@ -183,7 +183,7 @@ export const generateDetailedInvoicePDF = (invoice) => {
     // Split the description into lines if necessary
     const splitDescription = doc.splitTextToSize(finalDescription, 70); // Split description to fit in the column width
 
-    splitDescription.forEach((row, i) => {
+    splitDescription.forEach((row) => {
       if (gridY + 5 <= gridBoxY + gridBoxHeight) {
         // Ensure text stays within the grid box
         if (row) {
